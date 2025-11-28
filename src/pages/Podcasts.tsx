@@ -19,6 +19,7 @@ export default function Podcasts() {
   const [playingEpisode, setPlayingEpisode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const podcasts = useContentStore((state) => state.podcasts);
   const setPodcasts = useContentStore((state) => state.setPodcasts);
@@ -26,10 +27,16 @@ export default function Podcasts() {
   useEffect(() => {
     const fetchPodcasts = async () => {
       try {
+        setError(null);
         const firebasePodcasts = await getPodcasts();
+        console.log('Fetched podcasts:', firebasePodcasts.length);
         setPodcasts(firebasePodcasts);
-      } catch (error) {
+        if (firebasePodcasts.length === 0) {
+          setError('No podcasts found. Please check Firestore rules.');
+        }
+      } catch (error: any) {
         console.error('Error fetching podcasts:', error);
+        setError(`Failed to load podcasts: ${error.message || 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
@@ -182,9 +189,30 @@ export default function Podcasts() {
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
               <p className="mt-4 text-slate-600">Loading podcasts...</p>
             </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <div className="bg-rose-50 border-2 border-rose-200 rounded-2xl p-8 max-w-2xl mx-auto">
+                <p className="text-rose-600 text-lg font-bold mb-4">⚠️ Error Loading Podcasts</p>
+                <p className="text-slate-700 mb-6">{error}</p>
+                <div className="bg-white rounded-xl p-4 text-left">
+                  <p className="text-sm font-bold text-slate-800 mb-2">💡 To fix this:</p>
+                  <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                    <li>Go to Firebase Console → Firestore Database → Rules</li>
+                    <li>Set rules to allow read access for podcasts collection</li>
+                    <li>Click "Publish" to apply changes</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
           ) : filteredEpisodes.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-slate-600 text-lg">No podcasts found.</p>
+              <p className="text-slate-600 text-lg">No podcasts found in this category.</p>
+              <button
+                onClick={() => setActiveCategory('all')}
+                className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700"
+              >
+                View All Podcasts
+              </button>
             </div>
           ) : (
             <div className="grid gap-6">
