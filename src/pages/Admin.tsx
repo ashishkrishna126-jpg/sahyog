@@ -47,7 +47,7 @@ export default function Admin() {
   const [existingPodcasts, setExistingPodcasts] = useState<PodcastEpisode[]>([]);
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(true);
   const [audioMetadata, setAudioMetadata] = useState<{ duration: string; size: number } | null>(null);
-  const [activeTab, setActiveTab] = useState<'publish' | 'manage' | 'moderate'>('publish');
+  const [activeTab, setActiveTab] = useState<'publish' | 'manage' | 'moderate' | 'published'>('publish');
   const [isLoadingStories, setIsLoadingStories] = useState(false);
 
   useEffect(() => {
@@ -104,6 +104,11 @@ export default function Admin() {
   
   const pendingStories = useMemo(
     () => stories.filter((story) => story.status === 'pending'),
+    [stories]
+  );
+
+  const approvedStories = useMemo(
+    () => stories.filter((story) => story.status === 'approved'),
     [stories]
   );
 
@@ -344,6 +349,16 @@ export default function Admin() {
               }`}
             >
               ✅ Moderate Stories ({pendingStories.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('published')}
+              className={`px-6 py-2 rounded-t-lg font-bold transition-colors ${
+                activeTab === 'published'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              📚 Published Stories ({approvedStories.length})
             </button>
           </div>
         </div>
@@ -646,6 +661,74 @@ export default function Admin() {
                           className="bg-slate-700 text-white font-bold rounded-2xl px-4 py-2 hover:bg-slate-600 transition-colors"
                         >
                           🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Published Stories Tab */}
+          {activeTab === 'published' && (
+            <section className="relative">
+              <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-black">📚 Published Stories</h3>
+                    <p className="text-sm text-slate-400 mt-1">Manage approved stories visible on the website</p>
+                  </div>
+                  <button
+                    onClick={loadStories}
+                    disabled={isLoadingStories}
+                    className="bg-purple-500 text-white px-4 py-2 rounded-xl font-bold hover:bg-purple-400 transition-colors disabled:opacity-50"
+                  >
+                    {isLoadingStories ? '⏳ Loading...' : '🔄 Refresh'}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {isLoadingStories ? (
+                  <div className="text-center py-20">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+                    <p className="mt-4 text-slate-400">Loading stories...</p>
+                  </div>
+                ) : approvedStories.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 text-sm text-slate-400">
+                    📭 No published stories yet. Approved stories will appear here.
+                  </div>
+                ) : (
+                  approvedStories.map((story) => (
+                    <div key={story.id} className="bg-slate-900/70 border border-white/10 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-semibold">{story.nickname || 'Anonymous'}</p>
+                          <p className="text-xs text-slate-400 uppercase tracking-[0.3em]">
+                            {story.theme} • {story.language.toUpperCase()}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {new Date(story.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {story.storyText}
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleDecision(story, 'pending')}
+                          className="flex-1 bg-yellow-500 text-slate-900 font-bold rounded-2xl px-4 py-2 hover:bg-yellow-400 transition-colors"
+                        >
+                          ⏸️ Unpublish
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStory(story)}
+                          className="bg-rose-600 text-white font-bold rounded-2xl px-4 py-2 hover:bg-rose-500 transition-colors"
+                        >
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>
