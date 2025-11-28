@@ -402,8 +402,11 @@ function GamePlay() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
 
   const game = games.find((g) => g.id === gameId);
+  const isKnowledgeQuest = gameId === 'knowledge-quest';
 
   // Shuffle questions on component mount
   useEffect(() => {
@@ -441,9 +444,24 @@ function GamePlay() {
 
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedOption(null);
-      setIsAnswered(false);
+      // For Knowledge Quest, spin the wheel before showing next question
+      if (isKnowledgeQuest) {
+        setIsSpinning(true);
+        const spins = 5 + Math.random() * 3; // 5-8 full rotations
+        const newRotation = rotation + (360 * spins) + Math.random() * 360;
+        setRotation(newRotation);
+        
+        setTimeout(() => {
+          setIsSpinning(false);
+          setCurrentQuestion(currentQuestion + 1);
+          setSelectedOption(null);
+          setIsAnswered(false);
+        }, 3000); // 3 second spin
+      } else {
+        setCurrentQuestion(currentQuestion + 1);
+        setSelectedOption(null);
+        setIsAnswered(false);
+      }
     } else {
       setShowResult(true);
     }
@@ -528,6 +546,45 @@ function GamePlay() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-850">
+      {/* Spinning Wheel Overlay for Knowledge Quest */}
+      {isKnowledgeQuest && isSpinning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+          <div className="text-center">
+            <motion.div
+              animate={{ rotate: rotation }}
+              transition={{ duration: 3, ease: "easeOut" }}
+              className="w-64 h-64 mb-8"
+            >
+              <div className="relative w-full h-full">
+                {/* Wheel */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-500 via-gold-500 to-ribbon-500 shadow-2xl flex items-center justify-center">
+                  <div className="w-56 h-56 rounded-full bg-white flex items-center justify-center">
+                    <div className="text-6xl">🎯</div>
+                  </div>
+                </div>
+                {/* Segments decoration */}
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-1/2 left-1/2 w-1 h-32 bg-white origin-bottom"
+                    style={{
+                      transform: `translate(-50%, -100%) rotate(${i * 45}deg)`,
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-2xl font-bold text-white"
+            >
+              Spinning for next challenge...
+            </motion.p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-slate-100 sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">

@@ -1,14 +1,24 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
+import { useContentStore } from '../store/useContentStore';
+import { getPodcasts } from '../services/firebaseService';
 
 type MythStatement = {
   statement: string;
   detail: string;
   answer: boolean;
+};
+
+type PodcastHighlight = {
+  title: string;
+  guest: string;
+  detail: string;
+  duration: string;
+  isComingSoon: boolean;
 };
 
 const keralaData = [
@@ -23,24 +33,27 @@ const patientData = [
   { labelKey: 'patientStats.items.retention', value: '88%' },
 ];
 
-const podcastHighlights = [
+const comingSoonPlaceholders: PodcastHighlight[] = [
   {
-    title: 'Episode 12 · Living with PrEP',
-    guest: 'Dr. Priya Menon · HIV Specialist',
-    detail: 'Understand how PrEP pairs with testing and counseling in urban and rural settings.',
-    duration: '28 min',
+    title: 'Episode Coming Soon',
+    guest: 'TBA',
+    detail: 'Stay tuned for more inspiring stories and expert insights.',
+    duration: 'TBA',
+    isComingSoon: true,
   },
   {
-    title: 'Episode 13 · Voices of Healing',
-    guest: 'Survivor circles from Kochi',
-    detail: 'Community members share how they built resilience through support groups.',
-    duration: '32 min',
+    title: 'Episode Coming Soon',
+    guest: 'TBA',
+    detail: 'New episodes featuring survivor stories and medical experts.',
+    duration: 'TBA',
+    isComingSoon: true,
   },
   {
-    title: 'Episode 14 · Breaking the Stigma',
-    guest: 'Counselor Samir Rao',
-    detail: 'Practical tips for allies and friends to communicate with care.',
-    duration: '25 min',
+    title: 'Episode Coming Soon',
+    guest: 'TBA',
+    detail: 'Join us for more conversations on HIV awareness and support.',
+    duration: 'TBA',
+    isComingSoon: true,
   },
 ];
 
@@ -48,10 +61,42 @@ export default function Homepage() {
   const { t } = useTranslation();
   const [lessonIndex, setLessonIndex] = useState(0);
   const navigate = useNavigate();
+  const podcasts = useContentStore((state) => state.podcasts);
+  const setPodcasts = useContentStore((state) => state.setPodcasts);
+
+  useEffect(() => {
+    const fetchPodcasts = async () => {
+      try {
+        const firebasePodcasts = await getPodcasts();
+        setPodcasts(firebasePodcasts);
+      } catch (error) {
+        console.error('Error fetching podcasts:', error);
+      }
+    };
+    fetchPodcasts();
+  }, [setPodcasts]);
 
   const mythStatements = useMemo(() => {
     return t('homepage.mythStatements', { returnObjects: true }) as MythStatement[];
   }, [t]);
+
+  // Get top 3 latest podcasts or fill with coming soon
+  const podcastHighlights: PodcastHighlight[] = useMemo(() => {
+    const latestPodcasts: PodcastHighlight[] = podcasts.slice(0, 3).map((podcast) => ({
+      title: podcast.title,
+      guest: podcast.guest || 'SAHYOG Team',
+      detail: podcast.description,
+      duration: podcast.duration || 'TBA',
+      isComingSoon: false,
+    }));
+    
+    // Fill remaining slots with "Coming Soon"
+    while (latestPodcasts.length < 3) {
+      latestPodcasts.push(comingSoonPlaceholders[latestPodcasts.length]);
+    }
+    
+    return latestPodcasts;
+  }, [podcasts]);
 
   const currentLesson = mythStatements[lessonIndex] ?? mythStatements[0];
 
@@ -117,7 +162,7 @@ export default function Homepage() {
                 </h2>
                 
                 <p className="text-lg sm:text-xl text-slate-850/80 mb-10 leading-relaxed max-w-2xl mx-auto">
-                  Join our weekly podcast featuring real stories, medical experts, and community voices breaking the silence on HIV.
+                  Real stories, expert insights, and community voices breaking the silence on HIV. Your journey to awareness starts here.
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-4">
@@ -125,13 +170,13 @@ export default function Homepage() {
                     to="/podcasts"
                     className="px-8 py-4 bg-primary-600 text-white rounded-full font-bold shadow-lg shadow-primary-600/30 hover:bg-primary-700 transition-colors inline-block flex items-center gap-2"
                   >
-                    <span>▶</span> Listen Now
+                    <span>▶</span> Tune In
                   </Link>
                   <Link
                     to="/stories"
                     className="px-8 py-4 bg-white text-primary-600 border-2 border-primary-100 rounded-full font-bold hover:border-primary-200 hover:bg-primary-50 transition-colors inline-block"
                   >
-                    Read Stories
+                    Explore Stories
                   </Link>
                 </div>
               </motion.div>
@@ -234,7 +279,7 @@ export default function Homepage() {
                   <div className="text-xs uppercase tracking-[0.4em] text-white/70">Podcast Spotlight</div>
                   <h3 className="text-4xl font-black">Voices of Change</h3>
                   <p className="text-white/80 text-lg leading-relaxed">
-                    Each week we host experts, survivors, and allies to share relatable stories, actionable tips, and practical care guidance. Dive deeper into how HIV/AIDS affects communities and how supportive spaces can lead to healing.
+                    Your weekly dose of hope, healing, and real talk about HIV/AIDS. Expert voices, survivor journeys, and community wisdom—all in one place. More powerful conversations coming soon!
                   </p>
                   <div className="flex flex-wrap gap-5 text-sm text-white/80">
                     <div className="flex items-center gap-3">
@@ -247,8 +292,8 @@ export default function Homepage() {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">📅</span>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-white/60">New Episode</p>
-                        <p className="font-bold">Every Friday · 7 PM IST</p>
+                        <p className="text-xs uppercase tracking-[0.3em] text-white/60">Launch Status</p>
+                        <p className="font-bold">Pre-Launch · More Coming Soon</p>
                       </div>
                     </div>
                   </div>
@@ -257,45 +302,80 @@ export default function Homepage() {
                       to="/podcasts"
                       className="bg-white text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-2xl transition-transform"
                     >
-                      Listen Now
+                      🎧 Start Listening
                     </Link>
                     <Link
                       to="/podcasts"
                       className="border border-white/70 px-6 py-3 rounded-full font-bold text-white hover:bg-white/10 transition-all"
                     >
-                      View Episodes
+                      Explore Content
                     </Link>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs text-white/80">
                     <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
-                      <p className="text-3xl font-black text-white">168K</p>
-                      <p className="uppercase tracking-[0.3em]">Listens</p>
+                      <p className="text-3xl font-black text-white">🚀</p>
+                      <p className="uppercase tracking-[0.3em]">Launching Soon</p>
                     </div>
                     <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
-                      <p className="text-3xl font-black text-white">6</p>
-                      <p className="uppercase tracking-[0.3em]">Seasons</p>
+                      <p className="text-3xl font-black text-white">∞</p>
+                      <p className="uppercase tracking-[0.3em]">Stories to Tell</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                {podcastHighlights.map((highlight) => (
-                  <div
-                    key={highlight.title}
-                    className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_6px_20px_rgba(15,23,42,0.65)]"
+                {podcastHighlights.map((highlight, idx) => (
+                  <motion.div
+                    key={`${highlight.title}-${idx}`}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`rounded-3xl border border-white/10 p-5 shadow-[0_6px_20px_rgba(15,23,42,0.65)] ${
+                      highlight.isComingSoon 
+                        ? 'bg-white/[0.02] backdrop-blur-sm' 
+                        : 'bg-white/5'
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm uppercase tracking-[0.3em] text-white/70">Featured</p>
-                      <span className="text-xs text-white/60">{highlight.duration}</span>
+                      {highlight.isComingSoon ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">🔜</span>
+                          <p className="text-sm uppercase tracking-[0.3em] text-white/50 font-bold">Coming Soon</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm uppercase tracking-[0.3em] text-white/70">Featured</p>
+                      )}
+                      <span className={`text-xs ${
+                        highlight.isComingSoon ? 'text-white/40' : 'text-white/60'
+                      }`}>{highlight.duration}</span>
                     </div>
-                    <h4 className="text-xl font-bold text-white mb-2">{highlight.title}</h4>
-                    <p className="text-white/70 text-sm mb-4">{highlight.guest}</p>
-                    <p className="text-sm text-white/80 leading-relaxed mb-4">{highlight.detail}</p>
-                    <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-emerald-400 to-rose-500 rounded-full" style={{ width: '80%' }} />
-                    </div>
-                  </div>
+                    <h4 className={`text-xl font-bold mb-2 ${
+                      highlight.isComingSoon ? 'text-white/60' : 'text-white'
+                    }`}>{highlight.title}</h4>
+                    <p className={`text-sm mb-4 ${
+                      highlight.isComingSoon ? 'text-white/40' : 'text-white/70'
+                    }`}>{highlight.guest}</p>
+                    <p className={`text-sm leading-relaxed mb-4 ${
+                      highlight.isComingSoon ? 'text-white/50 italic' : 'text-white/80'
+                    }`}>{highlight.detail}</p>
+                    {!highlight.isComingSoon && (
+                      <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-rose-500 rounded-full" style={{ width: '80%' }} />
+                      </div>
+                    )}
+                    {highlight.isComingSoon && (
+                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-gradient-to-r from-white/20 to-white/40 rounded-full"
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                          style={{ width: '50%' }}
+                        />
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -420,66 +500,183 @@ export default function Homepage() {
         </section>
 
         {/* Myth vs Fact */}
-        <section className="bg-slate-50 py-24" id="quiz">
-          <div className="container mx-auto px-6">
-            <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[1.2fr_0.8fr] items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+        <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-primary-50/30 to-slate-50 py-24" id="quiz">
+          {/* Decorative background elements */}
+          <div className="absolute top-0 left-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="max-w-7xl mx-auto">
+              {/* Section Header */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
               >
-                <span className="text-primary-600 font-bold tracking-wider text-sm uppercase">Interactive Quiz</span>
-                <h2 className="text-3xl md:text-4xl font-black text-slate-850 mt-2 mb-4">{t('homepage.myth.title')}</h2>
-                <p className="text-slate-600 mb-8 text-lg">{t('homepage.myth.subtitle')}</p>
-                
+                <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider mb-4">
+                  <span className="text-xl">🧠</span>
+                  <span>Interactive Quiz</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-850 mt-2 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-primary-700">
+                  {t('homepage.myth.title')}
+                </h2>
+                <p className="text-slate-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                  {t('homepage.myth.subtitle')}
+                </p>
+              </motion.div>
+
+              <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr] items-start">
+                {/* Main Quiz Card */}
                 <motion.div
-                  key={currentLesson?.statement ?? 'empty'}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="rounded-3xl bg-white p-8 shadow-xl border border-slate-100"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="relative"
                 >
-                  <p className="text-2xl font-bold text-slate-850 leading-relaxed mb-8">"{currentLesson?.statement}"</p>
-                  <div className="flex gap-4 mb-8">
-                    <motion.button
-                      onClick={nextStatement}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex-1 rounded-xl bg-green-50 border-2 border-green-100 py-4 text-green-700 font-bold hover:bg-green-100 hover:border-green-200 transition-colors"
-                    >
-                      Fact
-                    </motion.button>
-                    <motion.button
-                      onClick={nextStatement}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex-1 rounded-xl bg-red-50 border-2 border-red-100 py-4 text-red-700 font-bold hover:bg-red-100 hover:border-red-200 transition-colors"
-                    >
-                      Myth
-                    </motion.button>
-                  </div>
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-slate-50 rounded-xl p-6"
+                  <motion.div
+                    key={currentLesson?.statement ?? 'empty'}
+                    initial={{ opacity: 0, scale: 0.95, rotateY: -10 }}
+                    animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    transition={{ duration: 0.6, type: "spring" }}
+                    className="relative rounded-3xl bg-white p-8 md:p-10 shadow-2xl border-2 border-primary-100 hover:shadow-3xl transition-all duration-500"
+                    style={{ transformStyle: 'preserve-3d' }}
                   >
-                    <p className="text-slate-700 leading-relaxed">
-                      <span className="font-bold block mb-2">Explanation:</span>
-                      {currentLesson?.detail}
-                    </p>
+                    {/* Decorative corner accents */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/20 to-transparent rounded-bl-full" />
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-rose-500/20 to-transparent rounded-tr-full" />
+                    
+                    {/* Statement Counter */}
+                    <div className="flex items-center justify-between mb-6">
+                      <span className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-100 to-rose-100 text-primary-700 px-4 py-2 rounded-full text-sm font-bold">
+                        <span className="text-lg">💡</span>
+                        Statement {lessonIndex + 1} of {mythStatements.length}
+                      </span>
+                      <motion.button
+                        onClick={nextStatement}
+                        whileHover={{ scale: 1.1, rotate: 180 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+                        title="Next statement"
+                      >
+                        🔄
+                      </motion.button>
+                    </div>
+
+                    {/* Statement Text */}
+                    <div className="relative bg-gradient-to-br from-slate-50 to-primary-50/50 rounded-2xl p-8 mb-8 border border-slate-100">
+                      <div className="absolute top-4 left-4 text-6xl text-primary-200 font-serif">"</div>
+                      <p className="relative text-2xl md:text-3xl font-bold text-slate-850 leading-relaxed text-center pt-6">
+                        {currentLesson?.statement}
+                      </p>
+                      <div className="absolute bottom-4 right-4 text-6xl text-primary-200 font-serif transform rotate-180">"</div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                      <motion.button
+                        onClick={nextStatement}
+                        whileHover={{ scale: 1.05, y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 py-6 px-6 text-white font-bold text-lg shadow-lg hover:shadow-2xl transition-all"
+                      >
+                        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/20 transition-colors" />
+                        <div className="relative flex flex-col items-center gap-2">
+                          <span className="text-3xl">✅</span>
+                          <span>FACT</span>
+                        </div>
+                      </motion.button>
+                      
+                      <motion.button
+                        onClick={nextStatement}
+                        whileHover={{ scale: 1.05, y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 py-6 px-6 text-white font-bold text-lg shadow-lg hover:shadow-2xl transition-all"
+                      >
+                        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/20 transition-colors" />
+                        <div className="relative flex flex-col items-center gap-2">
+                          <span className="text-3xl">❌</span>
+                          <span>MYTH</span>
+                        </div>
+                      </motion.button>
+                    </div>
+
+                    {/* Explanation Panel */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="relative rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-6 md:p-8 text-white shadow-xl"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center text-2xl">
+                          💬
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-lg mb-3 text-primary-300">Explanation:</h4>
+                          <p className="text-slate-200 leading-relaxed text-base">
+                            {currentLesson?.detail}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
                   </motion.div>
                 </motion.div>
-              </motion.div>
-              
-              <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  className="rounded-3xl bg-primary-600 p-8 text-white shadow-lg"
-                >
-                  <h3 className="text-xl font-bold mb-4">Why this matters?</h3>
-                  <p className="text-primary-100 leading-relaxed">{t('homepage.myth.forPublic')}</p>
-                </motion.div>
+                
+                {/* Sidebar Info Cards */}
+                <div className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 }}
+                    className="relative rounded-3xl bg-gradient-to-br from-primary-600 to-primary-700 p-8 text-white shadow-2xl overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative">
+                      <div className="text-4xl mb-4">🎯</div>
+                      <h3 className="text-2xl font-bold mb-4">Why this matters?</h3>
+                      <p className="text-primary-100 leading-relaxed">
+                        {t('homepage.myth.forPublic')}
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 }}
+                    className="rounded-3xl bg-white p-8 border-2 border-slate-100 shadow-lg"
+                  >
+                    <div className="text-4xl mb-4">🏆</div>
+                    <h3 className="text-xl font-bold text-slate-850 mb-3">Ready for More?</h3>
+                    <p className="text-slate-600 mb-6 leading-relaxed text-sm">
+                      Test your knowledge with our interactive games and unlock achievements!
+                    </p>
+                    <Link
+                      to="/games"
+                      className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-full font-bold hover:bg-slate-800 transition-colors shadow-lg"
+                    >
+                      <span>Play Games</span>
+                      <span>→</span>
+                    </Link>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.4 }}
+                    className="rounded-3xl bg-gradient-to-br from-rose-100 to-primary-100 p-8 border border-primary-200"
+                  >
+                    <div className="text-center">
+                      <div className="text-5xl mb-3">📚</div>
+                      <div className="text-4xl font-black text-slate-850 mb-2">{mythStatements.length}</div>
+                      <p className="text-slate-700 font-medium">Facts to Explore</p>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>
