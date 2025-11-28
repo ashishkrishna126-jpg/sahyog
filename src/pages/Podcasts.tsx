@@ -66,21 +66,7 @@ export default function Podcasts() {
       
       // Create and play new audio
       const audio = new Audio(audioUrl);
-      
-      // Set up Web Audio API for visualization
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const analyserNode = ctx.createAnalyser();
-        analyserNode.fftSize = 64;
-        const source = ctx.createMediaElementSource(audio);
-        source.connect(analyserNode);
-        analyserNode.connect(ctx.destination);
-        
-        setAnalyser(analyserNode);
-      } catch (error) {
-        console.error('Audio context error:', error);
-        // Continue playing audio even if visualization fails
-      }
+      audio.volume = 1.0; // Set volume to max
       
       // Update time
       audio.ontimeupdate = () => {
@@ -91,9 +77,37 @@ export default function Podcasts() {
         setDuration(audio.duration);
       };
       
-      audio.play().catch(err => console.error('Play error:', err));
-      setAudioPlayer(audio);
-      setPlayingEpisode(episodeId);
+      audio.onerror = (e) => {
+        console.error('Audio error:', e);
+        alert('Failed to load audio. Please check the file.');
+      };
+      
+      // Play audio first
+      audio.play()
+        .then(() => {
+          console.log('Audio playing successfully');
+          setAudioPlayer(audio);
+          setPlayingEpisode(episodeId);
+          
+          // Set up Web Audio API for visualization after successful play
+          try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const analyserNode = ctx.createAnalyser();
+            analyserNode.fftSize = 64;
+            const source = ctx.createMediaElementSource(audio);
+            source.connect(analyserNode);
+            analyserNode.connect(ctx.destination);
+            
+            setAnalyser(analyserNode);
+          } catch (error) {
+            console.error('Audio context error:', error);
+            // Audio still plays even if visualization fails
+          }
+        })
+        .catch(err => {
+          console.error('Play error:', err);
+          alert('Failed to play audio: ' + err.message);
+        });
 
       // Reset playing state when audio ends
       audio.onended = () => {
