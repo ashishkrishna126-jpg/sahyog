@@ -18,6 +18,7 @@ export default function Podcasts() {
   const [activeCategory, setActiveCategory] = useState<'all' | PodcastCategory>('all');
   const [playingEpisode, setPlayingEpisode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
   const podcasts = useContentStore((state) => state.podcasts);
   const setPodcasts = useContentStore((state) => state.setPodcasts);
@@ -40,6 +41,32 @@ export default function Podcasts() {
   const filteredEpisodes = activeCategory === 'all'
     ? podcasts
     : podcasts.filter(ep => ep.category === activeCategory);
+
+  const handlePlayPause = (episodeId: string, audioUrl: string) => {
+    if (playingEpisode === episodeId) {
+      // Pause current audio
+      audioPlayer?.pause();
+      setPlayingEpisode(null);
+    } else {
+      // Stop previous audio if any
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+      }
+      
+      // Create and play new audio
+      const audio = new Audio(audioUrl);
+      audio.play();
+      setAudioPlayer(audio);
+      setPlayingEpisode(episodeId);
+
+      // Reset playing state when audio ends
+      audio.onended = () => {
+        setPlayingEpisode(null);
+        setAudioPlayer(null);
+      };
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-850">
@@ -196,7 +223,7 @@ export default function Podcasts() {
 
                 <div className="flex-shrink-0">
                   <button 
-                    onClick={() => setPlayingEpisode(playingEpisode === episode.id ? null : episode.id)}
+                    onClick={() => handlePlayPause(episode.id, episode.audioUrl)}
                     className={`w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all ${
                       playingEpisode === episode.id
                         ? 'bg-slate-900 text-white'
@@ -205,6 +232,7 @@ export default function Podcasts() {
                   >
                     {playingEpisode === episode.id ? '⏸' : '▶'}
                   </button>
+                  <p className="text-xs text-slate-500 mt-2 text-center">{episode.duration}</p>
                 </div>
               </motion.div>
             ))}
