@@ -134,8 +134,26 @@ export const deletePodcast = async (podcastId: string, audioUrl: string) => {
     
     // Delete audio file from Storage
     if (audioUrl) {
-      const audioRef = ref(storage, audioUrl);
-      await deleteObject(audioRef);
+      try {
+        // Extract the file path from the download URL
+        // URL format: https://firebasestorage.googleapis.com/v0/b/PROJECT/o/PATH?alt=media&token=...
+        const url = new URL(audioUrl);
+        const pathMatch = url.pathname.match(/\/o\/(.+)$/);
+        
+        if (pathMatch) {
+          // Decode the path (Firebase Storage encodes it)
+          const encodedPath = pathMatch[1];
+          const decodedPath = decodeURIComponent(encodedPath);
+          const audioRef = ref(storage, decodedPath);
+          await deleteObject(audioRef);
+          console.log('Audio file deleted from Storage');
+        } else {
+          console.warn('Could not extract path from audioUrl:', audioUrl);
+        }
+      } catch (storageError) {
+        console.error('Error deleting audio file from Storage:', storageError);
+        // Don't throw - Firestore deletion succeeded
+      }
     }
   } catch (error) {
     console.error('Error deleting podcast:', error);

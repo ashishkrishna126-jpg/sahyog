@@ -222,12 +222,14 @@ export default function Admin() {
     }
 
     try {
+      showNotification('info', 'Deleting podcast...');
       await deletePodcast(podcast.id, podcast.audioUrl);
-      showNotification('success', 'Podcast deleted successfully');
+      showNotification('success', '✅ Podcast and audio file deleted successfully');
       loadPodcasts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting podcast:', error);
-      showNotification('error', 'Failed to delete podcast');
+      const errorMessage = error?.message || 'Failed to delete podcast';
+      showNotification('error', `❌ ${errorMessage}`);
     }
   };
 
