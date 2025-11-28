@@ -1,5 +1,5 @@
-import { collection, addDoc, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, getDocs, query, orderBy, Timestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 
 // Upload file to Firebase Storage
@@ -124,4 +124,58 @@ export const getStories = async (status?: 'pending' | 'approved' | 'rejected') =
     console.error('Error getting stories:', error);
     throw error;
   }
+};
+
+// Delete podcast and its audio file
+export const deletePodcast = async (podcastId: string, audioUrl: string) => {
+  try {
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'podcasts', podcastId));
+    
+    // Delete audio file from Storage
+    if (audioUrl) {
+      const audioRef = ref(storage, audioUrl);
+      await deleteObject(audioRef);
+    }
+  } catch (error) {
+    console.error('Error deleting podcast:', error);
+    throw error;
+  }
+};
+
+// Update podcast
+export const updatePodcast = async (podcastId: string, updates: Partial<PodcastData>) => {
+  try {
+    await updateDoc(doc(db, 'podcasts', podcastId), {
+      ...updates,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Error updating podcast:', error);
+    throw error;
+  }
+};
+
+// Get audio file metadata (duration, size)
+export const getAudioMetadata = (file: File): Promise<{ duration: string; size: number }> => {
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio');
+    audio.preload = 'metadata';
+    
+    audio.onloadedmetadata = () => {
+      const durationInSeconds = Math.floor(audio.duration);
+      const minutes = Math.floor(durationInSeconds / 60);
+      const seconds = durationInSeconds % 60;
+      const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      resolve({
+        duration,
+        size: file.size,
+      });
+      
+      URL.revokeObjectURL(audio.src);
+    };
+    
+    audio.src = URL.createObjectURL(file);
+  });
 };
