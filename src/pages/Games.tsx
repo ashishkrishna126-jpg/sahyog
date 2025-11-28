@@ -230,7 +230,9 @@ const isGameUnlocked = (gameIndex: number): boolean => {
   if (gameIndex === 0) return true;
   const prevGame = games[gameIndex - 1];
   const prevScore = getGameProgress(prevGame.id);
-  return prevScore >= (prevGame.requiredScore || 0);
+  const currentGame = games[gameIndex];
+  // Check if previous game score meets the requirement to unlock current game
+  return prevScore >= (currentGame.requiredScore || 0);
 };
 
 const shuffleArray = <T,>(array: T[]): T[] => {
