@@ -11,6 +11,7 @@ export interface PodcastEpisode {
   date: string;
   description: string;
   category: PodcastCategory;
+  language: Language;
   audioUrl: string;
   createdAt: Date;
 }

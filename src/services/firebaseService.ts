@@ -35,6 +35,7 @@ export interface PodcastData {
   host: string;
   guest: string;
   category: string;
+  language: string;
   date: string;
   duration: string;
   description: string;
@@ -72,6 +73,7 @@ export const getPodcasts = async () => {
         host: data.host,
         guest: data.guest,
         category: data.category,
+        language: data.language || 'en', // Default to English for old podcasts
         date: data.date,
         duration: data.duration,
         description: data.description,
