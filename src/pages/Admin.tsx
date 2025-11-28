@@ -1,11 +1,13 @@
 import { useForm } from 'react-hook-form';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 import { useContentStore } from '../store/useContentStore';
 import { useStoryStore } from '../store/useStoryStore';
 import { PodcastCategory, PodcastEpisode, Story } from '../types';
 import { uploadFile, addPodcast as savePodcast } from '../services/firebaseService';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 type PodcastFormValues = {
   title: string;
@@ -33,6 +35,24 @@ export default function Admin() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    // Auto sign-in with the admin email
+    const adminEmail = 'ashishkrishna126@gmail.com';
+    const adminPassword = prompt('Enter admin password to enable uploads:');
+    
+    if (adminPassword) {
+      signInWithEmailAndPassword(auth, adminEmail, adminPassword)
+        .then(() => {
+          setNotification('Authenticated successfully!');
+          setTimeout(() => setNotification(null), 3000);
+        })
+        .catch((error) => {
+          console.error('Auth error:', error);
+          setNotification('Authentication failed. Uploads will not work.');
+        });
+    }
+  }, []);
   
   const pendingStories = useMemo(
     () => stories.filter((story) => story.status === 'pending'),
