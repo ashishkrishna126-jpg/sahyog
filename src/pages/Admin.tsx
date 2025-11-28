@@ -12,7 +12,8 @@ import {
   deletePodcast,
   getAudioMetadata,
   getStories,
-  updateStoryStatus as updateStoryStatusInDB
+  updateStoryStatus as updateStoryStatusInDB,
+  deleteStory
 } from '../services/firebaseService';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -268,6 +269,21 @@ export default function Admin() {
     } catch (error) {
       console.error('Error updating story status:', error);
       showNotification('error', '❌ Failed to update story status. Please try again.');
+    }
+  };
+
+  const handleDeleteStory = async (story: Story) => {
+    if (!confirm(`Are you sure you want to delete the story by "${story.nickname || 'Anonymous'}"?`)) {
+      return;
+    }
+    
+    try {
+      await deleteStory(story.id);
+      await loadStories();
+      showNotification('success', '🗑️ Story deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      showNotification('error', '❌ Failed to delete story. Please try again.');
     }
   };
 
@@ -624,6 +640,12 @@ export default function Admin() {
                           className="flex-1 bg-rose-500 text-white font-bold rounded-2xl px-4 py-2 hover:bg-rose-400 transition-colors"
                         >
                           ❌ Reject
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStory(story)}
+                          className="bg-slate-700 text-white font-bold rounded-2xl px-4 py-2 hover:bg-slate-600 transition-colors"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </div>

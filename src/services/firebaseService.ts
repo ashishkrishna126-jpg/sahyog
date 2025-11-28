@@ -178,6 +178,16 @@ export const updateStoryStatus = async (storyId: string, status: 'pending' | 'ap
   }
 };
 
+// Delete story
+export const deleteStory = async (storyId: string) => {
+  try {
+    await deleteDoc(doc(db, 'stories', storyId));
+  } catch (error) {
+    console.error('Error deleting story:', error);
+    throw error;
+  }
+};
+
 // Delete podcast and its audio file
 export const deletePodcast = async (podcastId: string, audioUrl: string) => {
   try {
