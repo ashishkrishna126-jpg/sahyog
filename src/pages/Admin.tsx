@@ -20,7 +20,6 @@ type PodcastFormValues = {
   host: string;
   guest: string;
   category: PodcastCategory;
-  language: string;
   date: string;
   duration: string;
   description: string;
@@ -34,15 +33,6 @@ const categoryLabels: Record<PodcastCategory, string> = {
   community: 'Community Voices',
 };
 const categoryEntries = Object.entries(categoryLabels) as [PodcastCategory, string][];
-
-const languages = [
-  { code: 'en', name: 'English' },
-  { code: 'hi', name: 'Hindi (हिंदी)' },
-  { code: 'ml', name: 'Malayalam (മലയാളം)' },
-  { code: 'ta', name: 'Tamil (தமிழ்)' },
-  { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
-  { code: 'te', name: 'Telugu (తెలుగు)' },
-];
 
 export default function Admin() {
   const { addPodcast, setPodcasts } = useContentStore();
@@ -101,7 +91,6 @@ export default function Admin() {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<PodcastFormValues>({
     defaultValues: {
       category: 'personal',
-      language: 'en',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       duration: '',
     },
@@ -183,7 +172,7 @@ export default function Admin() {
         host: data.host.trim(),
         guest: data.guest.trim(),
         category: data.category,
-        language: data.language,
+        language: 'en',
         date: data.date,
         duration: data.duration || 'N/A',
         description: data.description.trim(),
@@ -198,7 +187,7 @@ export default function Admin() {
         host: data.host.trim(),
         guest: data.guest.trim(),
         category: data.category,
-        language: data.language as any,
+        language: 'en',
         date: data.date,
         duration: data.duration || 'N/A',
         description: data.description.trim(),
@@ -210,7 +199,6 @@ export default function Admin() {
       showNotification('success', '✅ Podcast published successfully!');
       reset({
         category: 'personal',
-        language: 'en',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         duration: '',
         title: '',
@@ -379,21 +367,6 @@ export default function Admin() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-slate-300">
-                    Language <span className="text-rose-400">*</span>
-                  </label>
-                  <select
-                    {...register('language', { required: true })}
-                    className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 outline-none"
-                  >
-                    {languages.map((lang) => (
-                      <option key={lang.code} value={lang.code} className="bg-slate-800">
-                        {lang.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-slate-300">Recording Date</label>
                   <input
                     {...register('date', { required: true })}
@@ -525,9 +498,6 @@ export default function Admin() {
                             <h3 className="text-xl font-bold text-white">{podcast.title}</h3>
                             <span className="px-3 py-1 bg-primary-500/20 text-primary-300 text-xs font-bold rounded-full uppercase">
                               {podcast.category}
-                            </span>
-                            <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-bold rounded-full uppercase">
-                              {languages.find(l => l.code === podcast.language)?.name || podcast.language}
                             </span>
                           </div>
                           <p className="text-sm text-slate-400 mb-3">
