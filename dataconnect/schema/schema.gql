@@ -1,0 +1,38 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type Podcast @table {
+  title: String!
+  audioUrl: String!
+  publishDate: Date!
+  description: String
+  imageUrl: String
+  duration: Int
+}
+
+type Story @table {
+  title: String!
+  content: String!
+  authorName: String!
+  publishDate: Date!
+  imageUrl: String
+  tags: [String]
+}
+
+type EducationalContent @table {
+  title: String!
+  content: String!
+  publishDate: Date!
+  imageUrl: String
+  tags: [String]
+  category: Category
+}
+
+type Category @table {
+  name: String!
+  description: String
+}

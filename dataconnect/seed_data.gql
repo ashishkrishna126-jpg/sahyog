@@ -1,0 +1,14 @@
+mutation CreateSeedData @transaction @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  # Replace with your actual type and data based on your schema
+  # Example assumes a type named 'Product' with fields 'id' and 'name'
+  product_insertMany(data: [
+    {
+      id: "1",
+      name: "Sample Product 1"
+    },
+    {
+      id: "2",
+      name: "Sample Product 2"
+    }
+  ])
+}

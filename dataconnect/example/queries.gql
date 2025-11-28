@@ -1,0 +1,46 @@
+mutation CreateEducationalContent(
+    $categoryId: UUID
+    $content: String!
+    $imageUrl: String
+    $publishDate: Date!
+    $title: String!
+) @auth(level: USER) {
+  educationalContent_insert(
+    data: {
+      categoryId: $categoryId
+      content: $content
+      imageUrl: $imageUrl
+      publishDate: $publishDate
+      title: $title
+    }
+  )
+}
+
+query ListEducationalContent @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  educationalContents {
+    id
+    title
+    content
+    imageUrl
+    publishDate
+    category {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdatePodcast($id: UUID!, $description: String) @auth(level: USER) {
+  podcast_update(key: {id: $id}, data: {description: $description})
+}
+
+query ListStoriesByTag($tag: String!) @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  stories(where: {tags: {includes: $tag}}) {
+    id
+    title
+    content
+    authorName
+    publishDate
+    tags
+  }
+}

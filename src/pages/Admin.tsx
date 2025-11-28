@@ -5,6 +5,7 @@ import RedRibbon from '../components/common/RedRibbon';
 import { useContentStore } from '../store/useContentStore';
 import { useStoryStore } from '../store/useStoryStore';
 import { PodcastCategory, PodcastEpisode, Story } from '../types';
+import { uploadFile, addPodcast as savePodcast } from '../services/firebaseService';
 
 type PodcastFormValues = {
   title: string;
@@ -29,6 +30,10 @@ export default function Admin() {
   const { addPodcast } = useContentStore();
   const { stories, updateStoryStatus } = useStoryStore();
   const [notification, setNotification] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const pendingStories = useMemo(
     () => stories.filter((story) => story.status === 'pending'),
     [stories]
@@ -43,24 +48,65 @@ export default function Admin() {
     },
   });
 
-  const onSubmitPodcast = (data: PodcastFormValues) => {
-    const newEpisode: PodcastEpisode = {
-      id: crypto.randomUUID?.() ?? `pod-${Date.now()}`,
-      title: data.title,
-      host: data.host,
-      guest: data.guest,
-      category: data.category,
-      date: data.date,
-      duration: data.duration,
-      description: data.description,
-      audioUrl: data.audioUrl || 'https://sa-hyog-media/podcasts/pending.mp3',
-      createdAt: new Date(),
-    };
+  const onSubmitPodcast = async (data: PodcastFormValues) => {
+    if (!audioFile) {
+      setNotification('Please select an audio file');
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
 
-    addPodcast(newEpisode);
-    setNotification('Podcast queued. It now appears on the public podcast page.');
-    reset({ ...data, title: '', guest: '', description: '' });
-    setTimeout(() => setNotification(null), 4000);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Upload audio file to Firebase Storage
+      const timestamp = Date.now();
+      const fileName = `${timestamp}-${audioFile.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
+      const audioUrl = await uploadFile(
+        audioFile,
+        `podcasts/${fileName}`,
+        (progress) => setUploadProgress(progress)
+      );
+
+      // Save podcast data to Firestore
+      await savePodcast({
+        title: data.title,
+        host: data.host,
+        guest: data.guest,
+        category: data.category,
+        date: data.date,
+        duration: data.duration,
+        description: data.description,
+        audioUrl,
+        createdAt: new Date() as any,
+      });
+
+      // Also add to local store for immediate display
+      const newEpisode: PodcastEpisode = {
+        id: crypto.randomUUID?.() ?? `pod-${timestamp}`,
+        title: data.title,
+        host: data.host,
+        guest: data.guest,
+        category: data.category,
+        date: data.date,
+        duration: data.duration,
+        description: data.description,
+        audioUrl,
+        createdAt: new Date(),
+      };
+
+      addPodcast(newEpisode);
+      setNotification('Podcast published successfully!');
+      reset({ ...data, title: '', guest: '', description: '' });
+      setAudioFile(null);
+      setUploadProgress(0);
+    } catch (error) {
+      console.error('Error uploading podcast:', error);
+      setNotification('Error uploading podcast. Please try again.');
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
   };
 
   const handleDecision = (story: Story, status: Story['status']) => {
@@ -154,6 +200,34 @@ export default function Admin() {
                 />
               </div>
               <div className="flex flex-col gap-1 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-300">Audio File *</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="audio/*,.mp3,.m4a,.wav"
+                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                    className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-400 cursor-pointer"
+                    disabled={isUploading}
+                  />
+                  {audioFile && (
+                    <p className="mt-2 text-xs text-emerald-300">
+                      Selected: {audioFile.name} ({(audioFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+              </div>
+              {isUploading && uploadProgress > 0 && (
+                <div className="md:col-span-2">
+                  <div className="bg-white/10 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">Uploading: {uploadProgress.toFixed(0)}%</p>
+                </div>
+              )}
+              <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-300">Description</label>
                 <textarea
                   {...register('description', { required: true })}
@@ -161,20 +235,13 @@ export default function Admin() {
                   className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none resize-none"
                 />
               </div>
-              <div className="flex flex-col gap-1 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-300">Audio Reference URL</label>
-                <input
-                  {...register('audioUrl')}
-                  placeholder="https://storage.sa-hyog/voices/episode.mp3"
-                  className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none"
-                />
-              </div>
               <div className="md:col-span-2 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-emerald-500 text-white font-bold px-8 py-3 rounded-2xl shadow-lg hover:bg-emerald-400 transition-colors"
+                  disabled={isUploading || !audioFile}
+                  className="bg-emerald-500 text-white font-bold px-8 py-3 rounded-2xl shadow-lg hover:bg-emerald-400 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
                 >
-                  Publish to Podcasts
+                  {isUploading ? `Uploading ${uploadProgress.toFixed(0)}%...` : 'Publish to Podcasts'}
                 </button>
               </div>
             </form>
