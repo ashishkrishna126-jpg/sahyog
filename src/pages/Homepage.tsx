@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
@@ -44,14 +44,9 @@ const podcastHighlights = [
   },
 ];
 
-const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'sahyog-admin';
-
 export default function Homepage() {
   const { t } = useTranslation();
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [passcodeInput, setPasscodeInput] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const mythStatements = useMemo(() => {
@@ -63,18 +58,6 @@ export default function Homepage() {
   const nextStatement = () => {
     if (mythStatements.length === 0) return;
     setLessonIndex((prev) => (prev + 1) % mythStatements.length);
-  };
-
-  const handleAdminSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (passcodeInput.trim() === ADMIN_PASSCODE) {
-      setIsAdminModalOpen(false);
-      setPasscodeInput('');
-      setAuthError(null);
-      navigate('/admin');
-    } else {
-      setAuthError('Incorrect passcode.');
-    }
   };
 
   return (
@@ -229,8 +212,7 @@ export default function Homepage() {
                 </p>
                 <button
                   onClick={() => {
-                    setIsAdminModalOpen(true);
-                    setAuthError(null);
+                    navigate('/admin');
                   }}
                   className="inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm font-bold uppercase tracking-[0.3em] text-white hover:border-white transition-colors"
                 >
@@ -617,56 +599,6 @@ export default function Homepage() {
           </div>
         </footer>
       </main>
-
-      {isAdminModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/70">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl"
-          >
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Admin Access</h3>
-            <p className="text-sm text-slate-500 mb-6">
-              Enter the administrator passcode to add podcasts or review stories.
-            </p>
-            <form onSubmit={handleAdminSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold uppercase text-slate-400">Passcode</label>
-                <input
-                  value={passcodeInput}
-                  onChange={(event) => setPasscodeInput(event.target.value)}
-                  type="password"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                />
-              </div>
-              {authError && <p className="text-sm text-rose-500">{authError}</p>}
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAdminModalOpen(false);
-                    setPasscodeInput('');
-                    setAuthError(null);
-                  }}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-primary-600 px-5 py-2 text-sm font-semibold text-white shadow-lg hover:bg-primary-500"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
-            <p className="mt-4 text-xs text-slate-400">
-              Tip: Set `VITE_ADMIN_PASSCODE` in your environment to avoid exposing the default value.
-            </p>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
