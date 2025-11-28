@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-family: 'Inter', sans-serif;
+  --line-height: 1.6;
+  --letter-spacing: 0;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-slate-50 min-h-screen text-slate-900;
+    margin: 0;
+    font-family: var(--font-family);
+    line-height: var(--line-height);
+    letter-spacing: var(--letter-spacing);
+  }
+  
+  /* Language-specific typography */
+  .lang-ml {
+    --font-family: 'Noto Sans Malayalam', sans-serif;
+    --line-height: 1.8;
+    --letter-spacing: 0.3px;
+  }
+  
+  .lang-hi {
+    --font-family: 'Noto Sans Devanagari', sans-serif;
+    --line-height: 1.8;
+    --letter-spacing: 0.2px;
+  }
+  
+  .lang-ta {
+    --font-family: 'Noto Sans Tamil', sans-serif;
+    --line-height: 1.9;
+    --letter-spacing: 0.2px;
+  }
+  
+  .lang-kn {
+    --font-family: 'Noto Sans Kannada', sans-serif;
+    --line-height: 1.9;
+    --letter-spacing: 0.2px;
+  }
+  
+  .lang-te {
+    --font-family: 'Noto Sans Telugu', sans-serif;
+    --line-height: 1.9;
+    --letter-spacing: 0.2px;
+  }
+  
+  .lang-en {
+    --font-family: 'Inter', 'Segoe UI', sans-serif;
+    --line-height: 1.6;
+    --letter-spacing: 0;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-ribbon to-empathy text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-ribbon border-2 border-ribbon px-6 py-3 rounded-lg font-semibold hover:bg-ribbon hover:text-white transition-all duration-300;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6;
+  }
+  
+  .language-text-hi {
+    @apply font-hindi;
+  }
+  
+  .language-text-ta {
+    @apply font-tamil;
+  }
+  
+  .language-text-ml {
+    @apply font-malayalam;
+  }
+  
+  .language-text-kn {
+    @apply font-kannada;
+  }
+  
+  .language-text-te {
+    @apply font-telugu;
+  }
+}
+
+@keyframes ribbonMove {
+  0% {
+    transform: translateX(-20%) translateY(-10%) rotate(0deg);
+  }
+  50% {
+    transform: translateX(0%) translateY(10%) rotate(2deg);
+  }
+  100% {
+    transform: translateX(-20%) translateY(-10%) rotate(0deg);
+  }
+}

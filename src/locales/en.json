@@ -1,0 +1,306 @@
+{
+  "languageSelection": {
+    "title": "Choose Your Language",
+    "subtitle": "Select your preferred language to continue",
+    "languages": {
+      "en": "English",
+      "hi": "हिंदी (Hindi)",
+      "ml": "മലയാളം (Malayalam)",
+      "ta": "தமிழ் (Tamil)",
+      "kn": "ಕನ್ನಡ (Kannada)",
+      "te": "తెలుగు (Telugu)"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "awareness": "Awareness Hub",
+    "stories": "Stories",
+    "games": "Games",
+    "resources": "Resources",
+    "pledge": "Take Pledge"
+  },
+  "home": {
+    "hero": {
+      "title": "Together Against HIV/AIDS",
+      "subtitle": "Spread Awareness. Fight Stigma. Share Stories. Build Understanding.",
+      "cta": {
+        "learn": "Learn About HIV",
+        "readStories": "Read Real Stories",
+        "playGames": "Play Awareness Games",
+        "shareStory": "Share Your Story",
+        "takePledge": "Take the Pledge"
+      }
+    },
+    "featured": {
+      "title": "Featured Story",
+      "latestTitle": "Latest Stories",
+      "awarenessTitle": "Awareness Highlights",
+      "gamesTitle": "Interactive Learning"
+    }
+  },
+  "awareness": {
+    "title": "HIV/AIDS Awareness Hub",
+    "knowledgeIsPower": "Knowledge is Power",
+    "subtitle": "Understanding HIV/AIDS is the first step in fighting stigma and supporting those affected. Explore each topic to learn scientifically accurate information.",
+    "topics": {
+      "whatIsHiv": {
+        "title": "What is HIV & AIDS?",
+        "description": "Understand the basics of HIV and AIDS, how they differ, and what they mean for those affected."
+      },
+      "howItSpreads": {
+        "title": "How HIV Spreads",
+        "description": "Learn about the actual ways HIV is transmitted and the science behind it."
+      },
+      "howItDoesNot": {
+        "title": "How HIV Does NOT Spread",
+        "description": "Breaking myths - understand what activities are completely safe."
+      },
+      "testing": {
+        "title": "Testing & Treatment",
+        "description": "Information about HIV testing, early detection, and treatment options."
+      },
+      "stigma": {
+        "title": "Stigma & Mental Health",
+        "description": "Understanding the psychological impact and how we can support those affected."
+      },
+      "mythVsFact": {
+        "title": "Myth vs Truth",
+        "description": "Common misconceptions about HIV and the scientific facts."
+      }
+    }
+  },
+  "homepage": {
+    "heroDescription": "Learn about HIV and stay healthy. Get honest answers, find support, and help end stigma.",
+    "roleSelection": {
+      "title": "Get information that helps you",
+      "subtitle": "Simple facts about HIV, testing, treatment, and support."
+    },
+    "roles": {
+      "public": {
+        "tone": "Clear & Helpful Information",
+        "points": [
+          "How to prevent HIV",
+          "How HIV spreads",
+          "HIV testing explained",
+          "Treatment works",
+          "Where to get help"
+        ]
+      },
+      "clinical": {
+        "tone": "Clinical & authoritative briefings",
+        "points": [
+          "ART treatment guidelines",
+          "Case studies",
+          "Research updates",
+          "Reporting protocols",
+          "Policy notices"
+        ]
+      }
+    },
+    "roleLabels": {
+      "public": "General Public",
+      "clinical": "Healthcare Professional"
+    },
+    "globalStats": {
+      "diagnoses": "Global new diagnoses (last year)",
+      "art": "People on ART",
+      "coverage": "Treatment coverage (Region)"
+    },
+    "featureTiles": {
+      "learn": {
+        "title": "Learn About HIV",
+        "description": "Simple facts about HIV - how it spreads, how to stay safe, and treatment options."
+      },
+      "stories": {
+        "title": "Real Stories",
+        "description": "Stories from people living with HIV - shared with permission and respect."
+      },
+      "quiz": {
+        "title": "Quick Quiz",
+        "description": "Test your knowledge. Learn what's true and what's myth about HIV."
+      },
+      "share": {
+        "title": "Share Your Story",
+        "description": "Tell your story safely and privately. It helps others understand."
+      },
+      "pledge": {
+        "title": "Show Your Support",
+        "description": "Join thousands supporting those with HIV and fighting stigma."
+      },
+      "resources": {
+        "title": "Need Help?",
+        "description": "Find clinics, testing centers, and support services near you."
+      }
+    },
+    "myth": {
+      "title": "Myth or Fact? Test Your Knowledge",
+      "subtitle": "Pick Myth or Fact and learn the real answer.",
+      "forPublic": "Get accurate facts about prevention, testing, and living with HIV.",
+      "forProfessional": "Clinical information for healthcare providers.",
+      "buttons": {
+        "fact": "Fact",
+        "myth": "Myth"
+      }
+    },
+    "mythStatements": [
+      {
+        "statement": "HIV can be transmitted through casual contact such as hugging.",
+        "detail": "Transmission requires exchange of certain bodily fluids under specific conditions.",
+        "answer": false
+      },
+      {
+        "statement": "Modern antiretroviral therapy (ART) can suppress viral load to undetectable levels.",
+        "detail": "Consistent ART adherence keeps people healthy and prevents transmission.",
+        "answer": true
+      },
+      {
+        "statement": "Prevention and treatment are only needed for select populations.",
+        "detail": "HIV affects diverse communities; prevention and care must be universal.",
+        "answer": false
+      }
+    ],
+    "storyWall": {
+      "title": "Anonymous Story Wall",
+      "description": "Stories curated by moderators to keep contributors safe and respected.",
+      "entries": [
+        "I completed ART and now mentor others at the testing center.",
+        "Doctors and peers helped me disclose while protecting my peace of mind."
+      ],
+      "submit": "Submit your story"
+    },
+    "pledge": {
+      "title": "Pledge Wall",
+      "countDescription": "Pledges to support stigma-free communities.",
+      "button": "Add your pledge"
+    },
+    "keralaStats": {
+      "title": "Kerala HIV/AIDS Snapshot",
+      "items": {
+        "newCases": "New diagnoses in Kerala (last year)",
+        "treatment": "People on ART in Kerala",
+        "patients": "Patients receiving round-the-clock care"
+      }
+    },
+    "patientStats": {
+      "title": "Patient Outcomes",
+      "items": {
+        "viralSuppression": "Viral suppression rate",
+        "support": "Psychosocial support uptake",
+        "retention": "Retention in care"
+      }
+    },
+    "clinic": {
+      "title": "Clinic & Support Locator",
+      "description": "Find accredited clinics, testing centers, and support services.",
+      "mapPlaceholder": "Map placeholder (Mapbox/Leaflet integration here)."
+    },
+    "trust": {
+      "trustBadge": "WHO Partner",
+      "advisory": "Medical Advisory Board",
+      "disclaimer": "Educational use only—consult your provider for diagnosis.",
+      "detail": "Aligning global guidelines with localized outreach.",
+      "advisoryDetail": "Clinical directors, epidemiologists, and community advocates."
+    },
+    "footer": {
+      "languageLabel": "Language:",
+      "accessibility": "Accessible to WCAG AA standards."
+    }
+  },
+  "stories": {
+    "title": "Real Stories, Real Voices",
+    "subtitle": "Anonymous stories from people living with HIV and their loved ones",
+    "shareYourStory": "Share Your Story",
+    "filters": {
+      "all": "All Stories",
+      "diagnosis": "Diagnosis Journey",
+      "treatment": "Treatment Journey",
+      "stigma": "Facing Stigma",
+      "success": "Success Stories",
+      "mentalHealth": "Mental Health",
+      "support": "Support Stories"
+    },
+    "reactions": {
+      "stayStrong": "Stay Strong",
+      "weStandWithYou": "We Stand With You",
+      "youInspireMe": "You Inspire Me"
+    },
+    "form": {
+      "title": "Share Your Story Anonymously",
+      "nickname": "Nickname (Optional)",
+      "ageRange": "Age Range",
+      "country": "Country/State (Optional)",
+      "story": "Your Story",
+      "tags": "Tags",
+      "theme": "Story Theme",
+      "triggerWarning": "This story may contain sensitive content",
+      "consent": "I consent to share this story anonymously",
+      "submit": "Submit Story",
+      "privacyNote": "Your privacy is protected. Our AI checks for personal information before publishing."
+    }
+  },
+  "games": {
+    "title": "Interactive Awareness Games",
+    "subtitle": "Learn through play",
+    "mythOrFact": {
+      "title": "Myth or Fact",
+      "description": "Test your knowledge about HIV"
+    },
+    "dragAndDrop": {
+      "title": "How HIV Spreads",
+      "description": "Drag items to correct categories"
+    },
+    "safeChoices": {
+      "title": "Safe Choices Story",
+      "description": "Make decisions in real-life scenarios"
+    },
+    "quiz": {
+      "title": "Awareness Quiz",
+      "description": "Complete quiz and earn certificate"
+    }
+  },
+  "resources": {
+    "title": "Resources & Support",
+    "helplines": "Helplines",
+    "testingCenters": "Testing Centers",
+    "ngos": "NGOs & Organizations",
+    "crisis": "Crisis Support",
+    "disclaimer": "This website provides educational information only and is not a substitute for professional medical advice."
+  },
+  "pledge": {
+    "title": "Stand Against Stigma",
+    "subtitle": "Take the pledge to support and spread awareness",
+    "pledgeText": "I pledge to support those living with HIV, fight stigma, and spread accurate awareness.",
+    "takePledge": "Take the Pledge",
+    "pledgeWall": "Pledge Wall"
+  },
+  "worldAidsDay": {
+    "title": "World AIDS Day",
+    "date": "December 1",
+    "ribbon": "Red Ribbon",
+    "message": "Support. Awareness. Love. No Stigma.",
+    "tribute": "Tribute Wall",
+    "challenge": "World AIDS Day Challenge",
+    "memorial": "Today we remember those we lost, and honor those who continue to fight.",
+    "badge": "World AIDS Day Supporter 2025"
+  },
+  "footer": {
+    "tagline": "Together we can end HIV stigma",
+    "sections": {
+      "about": "About",
+      "privacy": "Privacy",
+      "contact": "Contact",
+      "disclaimer": "Disclaimer"
+    }
+  },
+  "common": {
+    "readMore": "Read More",
+    "backToHome": "Back to Home",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success!",
+    "cancel": "Cancel",
+    "save": "Save",
+    "share": "Share",
+    "download": "Download"
+  }
+}
