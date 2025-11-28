@@ -68,6 +68,23 @@ export default function Podcasts() {
       const audio = new Audio(audioUrl);
       audio.volume = 1.0; // Set volume to max
       
+      // Set up Web Audio API for visualization BEFORE playing
+      let analyserNode: AnalyserNode | null = null;
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        analyserNode = ctx.createAnalyser();
+        analyserNode.fftSize = 64;
+        const source = ctx.createMediaElementSource(audio);
+        source.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
+        
+        setAnalyser(analyserNode);
+        console.log('Audio context setup successful');
+      } catch (error) {
+        console.error('Audio context error:', error);
+        // Audio will still play through normal output
+      }
+      
       // Update time
       audio.ontimeupdate = () => {
         setCurrentTime(audio.currentTime);
@@ -82,27 +99,12 @@ export default function Podcasts() {
         alert('Failed to load audio. Please check the file.');
       };
       
-      // Play audio first
+      // Play audio
       audio.play()
         .then(() => {
           console.log('Audio playing successfully');
           setAudioPlayer(audio);
           setPlayingEpisode(episodeId);
-          
-          // Set up Web Audio API for visualization after successful play
-          try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const analyserNode = ctx.createAnalyser();
-            analyserNode.fftSize = 64;
-            const source = ctx.createMediaElementSource(audio);
-            source.connect(analyserNode);
-            analyserNode.connect(ctx.destination);
-            
-            setAnalyser(analyserNode);
-          } catch (error) {
-            console.error('Audio context error:', error);
-            // Audio still plays even if visualization fails
-          }
         })
         .catch(err => {
           console.error('Play error:', err);
