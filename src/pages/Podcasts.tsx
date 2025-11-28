@@ -340,6 +340,14 @@ export default function Podcasts() {
                     <span className="px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider">
                       {episode.category}
                     </span>
+                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                      {episode.language === 'en' ? 'English' : 
+                       episode.language === 'hi' ? 'हिंदी' :
+                       episode.language === 'ml' ? 'മലയാളം' :
+                       episode.language === 'ta' ? 'தமிழ்' :
+                       episode.language === 'kn' ? 'ಕನ್ನಡ' :
+                       episode.language === 'te' ? 'తెలుగు' : episode.language}
+                    </span>
                     <span className="text-slate-400 text-xs font-bold flex items-center">
                       📅 {episode.date}
                     </span>
