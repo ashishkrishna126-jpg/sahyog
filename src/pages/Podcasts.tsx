@@ -136,7 +136,24 @@ export default function Podcasts() {
               <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700 shadow-2xl max-w-md mx-auto">
                 <div className="aspect-square bg-slate-800 rounded-2xl mb-6 flex items-center justify-center text-8xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 group-hover:scale-110 transition-transform duration-700" />
-                  🎙️
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-30">
+                    {[...Array(7)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-2 bg-primary-400 rounded-full"
+                        animate={{
+                          height: ['30%', '90%', '50%', '100%', '40%'],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          delay: i * 0.15,
+                          ease: 'easeInOut',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="relative z-10">🎙️</span>
                 </div>
                 <div className="space-y-2">
                   <div className="h-2 bg-slate-700 rounded-full w-full overflow-hidden">
@@ -219,10 +236,35 @@ export default function Podcasts() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col md:flex-row gap-6 items-center md:items-start"
+                className={`bg-white p-6 rounded-2xl shadow-sm border transition-all flex flex-col md:flex-row gap-6 items-center md:items-start ${
+                  playingEpisode === episode.id 
+                    ? 'border-primary-400 shadow-lg shadow-primary-100 ring-2 ring-primary-100' 
+                    : 'border-slate-100 hover:shadow-md'
+                }`}
               >
-                <div className="w-32 h-32 bg-slate-100 rounded-xl flex-shrink-0 flex items-center justify-center text-5xl">
-                  {categoryIcons[episode.category]}
+                <div className={`w-32 h-32 rounded-xl flex-shrink-0 flex items-center justify-center text-5xl relative overflow-hidden ${
+                  playingEpisode === episode.id ? 'bg-gradient-to-br from-primary-50 to-purple-50' : 'bg-slate-100'
+                }`}>
+                  {playingEpisode === episode.id && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-1 z-0">
+                      {[...Array(5)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="w-1 bg-primary-400 rounded-full"
+                          animate={{
+                            height: ['20%', '80%', '40%', '90%', '30%'],
+                          }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            delay: i * 0.1,
+                            ease: 'easeInOut',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <span className="relative z-10">{categoryIcons[episode.category]}</span>
                 </div>
                 
                 <div className="flex-1 text-center md:text-left">
