@@ -42,7 +42,7 @@ const games: GameCard[] = [
     difficulty: 'Medium',
     playCount: 890,
     color: 'from-gold-500 to-gold-600',
-    requiredScore: 2,
+    requiredScore: 2, // Need at least 2/3 from myth-or-fact
   },
   {
     id: 'safe-choices',
@@ -52,7 +52,7 @@ const games: GameCard[] = [
     difficulty: 'Medium',
     playCount: 756,
     color: 'from-slate-500 to-slate-600',
-    requiredScore: 4,
+    requiredScore: 4, // Need at least 4/6 from prevention-steps
   },
   {
     id: 'knowledge-quest',
@@ -62,7 +62,7 @@ const games: GameCard[] = [
     difficulty: 'Hard',
     playCount: 542,
     color: 'from-ribbon-500 to-ribbon-600',
-    requiredScore: 4,
+    requiredScore: 1, // Need at least 1/2 from safe-choices
   },
 ];
 
