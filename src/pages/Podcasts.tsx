@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 import { useContentStore } from '../store/useContentStore';
 import { PodcastCategory } from '../types';
+import { getPodcasts } from '../services/firebaseService';
 
 const categoryIcons: Record<PodcastCategory, string> = {
   medical: '🔬',
@@ -16,8 +17,25 @@ const categoryIcons: Record<PodcastCategory, string> = {
 export default function Podcasts() {
   const [activeCategory, setActiveCategory] = useState<'all' | PodcastCategory>('all');
   const [playingEpisode, setPlayingEpisode] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const podcasts = useContentStore((state) => state.podcasts);
+  const setPodcasts = useContentStore((state) => state.setPodcasts);
+
+  useEffect(() => {
+    const fetchPodcasts = async () => {
+      try {
+        const firebasePodcasts = await getPodcasts();
+        setPodcasts(firebasePodcasts);
+      } catch (error) {
+        console.error('Error fetching podcasts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPodcasts();
+  }, [setPodcasts]);
 
   const filteredEpisodes = activeCategory === 'all'
     ? podcasts
@@ -132,8 +150,18 @@ export default function Podcasts() {
       {/* Episodes Grid */}
       <section className="py-16 bg-slate-50">
         <div className="container mx-auto px-6">
-          <div className="grid gap-6">
-            {filteredEpisodes.map((episode) => (
+          {isLoading ? (
+            <div className="text-center py-20">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+              <p className="mt-4 text-slate-600">Loading podcasts...</p>
+            </div>
+          ) : filteredEpisodes.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-slate-600 text-lg">No podcasts found.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {filteredEpisodes.map((episode) => (
               <motion.div
                 key={episode.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -181,6 +209,7 @@ export default function Podcasts() {
               </motion.div>
             ))}
           </div>
+          )}
         </div>
       </section>
     </div>

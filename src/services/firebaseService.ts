@@ -60,10 +60,21 @@ export const getPodcasts = async () => {
   try {
     const q = query(collection(db, 'podcasts'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title,
+        host: data.host,
+        guest: data.guest,
+        category: data.category,
+        date: data.date,
+        duration: data.duration,
+        description: data.description,
+        audioUrl: data.audioUrl,
+        createdAt: data.createdAt?.toDate() || new Date(),
+      };
+    });
   } catch (error) {
     console.error('Error getting podcasts:', error);
     throw error;
