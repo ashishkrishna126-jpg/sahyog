@@ -16,7 +16,7 @@ interface AppStore {
 export const useAppStore = create<AppStore>()(
   persist(
     (set) => ({
-      language: (localStorage.getItem('preferredLanguage') as Language) || 'en',
+      language: 'en',
       userPreferences: {
         language: 'en',
         hasCompletedIntro: false,
@@ -27,11 +27,11 @@ export const useAppStore = create<AppStore>()(
           mythsCorrected: [],
         },
       },
-      setLanguage: (language) => {
-        localStorage.setItem('preferredLanguage', language);
+      setLanguage: (_language) => {
+        // Force English only
         set((state) => ({
-          language,
-          userPreferences: { ...state.userPreferences, language },
+          language: 'en',
+          userPreferences: { ...state.userPreferences, language: 'en' },
         }));
       },
       addBadge: (badge) =>

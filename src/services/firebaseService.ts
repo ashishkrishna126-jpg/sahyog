@@ -91,22 +91,31 @@ export const getPodcasts = async () => {
 };
 
 // Add story to Firestore
-export interface StoryData {
-  title: string;
-  content: string;
-  category: string;
+export interface StorySubmission {
   nickname?: string;
-  language: string;
+  ageRange?: string;
+  state?: string;
+  storyText: string;
   theme: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: Timestamp;
+  triggerWarning?: boolean;
+  language?: string;
+  tags?: string[];
 }
 
-export const addStory = async (storyData: StoryData) => {
+export const addStory = async (storyData: StorySubmission) => {
   try {
     const docRef = await addDoc(collection(db, 'stories'), {
-      ...storyData,
+      nickname: storyData.nickname || '',
+      ageRange: storyData.ageRange || '',
+      state: storyData.state || '',
+      language: storyData.language || 'en',
+      storyText: storyData.storyText,
+      tags: storyData.tags || [],
+      theme: storyData.theme,
+      triggerWarning: storyData.triggerWarning || false,
+      status: 'pending',
       createdAt: Timestamp.now(),
+      reactions: { stayStrong: 0, weStandWithYou: 0, youInspireMe: 0 },
     });
     return docRef.id;
   } catch (error) {
@@ -120,17 +129,51 @@ export const getStories = async (status?: 'pending' | 'approved' | 'rejected') =
   try {
     const q = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    const stories = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    console.log('Firestore query returned', querySnapshot.docs.length, 'documents');
+    
+    const stories = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      console.log('Story document:', doc.id, data);
+      return {
+        id: doc.id,
+        nickname: data.nickname,
+        ageRange: data.ageRange,
+        country: data.country,
+        state: data.state,
+        language: data.language || 'en',
+        storyText: data.storyText,
+        tags: data.tags || [],
+        theme: data.theme,
+        triggerWarning: data.triggerWarning,
+        status: data.status,
+        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+        reactions: data.reactions || { stayStrong: 0, weStandWithYou: 0, youInspireMe: 0 },
+      };
+    });
+    
+    console.log('All stories before filtering:', stories.length, stories.map(s => ({ id: s.id, status: s.status })));
     
     if (status) {
-      return stories.filter((story: any) => story.status === status);
+      const filtered = stories.filter((story) => story.status === status);
+      console.log(`Filtered stories with status '${status}':`, filtered.length, filtered);
+      return filtered;
     }
     return stories;
   } catch (error) {
     console.error('Error getting stories:', error);
+    throw error;
+  }
+};
+
+// Update story status
+export const updateStoryStatus = async (storyId: string, status: 'pending' | 'approved' | 'rejected') => {
+  try {
+    await updateDoc(doc(db, 'stories', storyId), {
+      status,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Error updating story status:', error);
     throw error;
   }
 };

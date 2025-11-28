@@ -10,7 +10,9 @@ import {
   addPodcast as savePodcast, 
   getPodcasts,
   deletePodcast,
-  getAudioMetadata 
+  getAudioMetadata,
+  getStories,
+  updateStoryStatus as updateStoryStatusInDB
 } from '../services/firebaseService';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -36,7 +38,7 @@ const categoryEntries = Object.entries(categoryLabels) as [PodcastCategory, stri
 
 export default function Admin() {
   const { addPodcast, setPodcasts } = useContentStore();
-  const { stories, updateStoryStatus } = useStoryStore();
+  const { stories, updateStoryStatus, setStories } = useStoryStore();
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -45,6 +47,7 @@ export default function Admin() {
   const [isLoadingPodcasts, setIsLoadingPodcasts] = useState(true);
   const [audioMetadata, setAudioMetadata] = useState<{ duration: string; size: number } | null>(null);
   const [activeTab, setActiveTab] = useState<'publish' | 'manage' | 'moderate'>('publish');
+  const [isLoadingStories, setIsLoadingStories] = useState(false);
 
   useEffect(() => {
     // Auto sign-in with the admin email
@@ -56,6 +59,7 @@ export default function Admin() {
         .then(() => {
           showNotification('success', 'Authenticated successfully!');
           loadPodcasts();
+          loadStories();
         })
         .catch((error) => {
           console.error('Auth error:', error);
@@ -75,6 +79,20 @@ export default function Admin() {
       showNotification('error', 'Failed to load podcasts');
     } finally {
       setIsLoadingPodcasts(false);
+    }
+  };
+
+  const loadStories = async () => {
+    try {
+      setIsLoadingStories(true);
+      const allStories = await getStories() as Story[];
+      setStories(allStories);
+      showNotification('info', `Loaded ${allStories.filter(s => s.status === 'pending').length} pending stories`);
+    } catch (error) {
+      console.error('Error loading stories:', error);
+      showNotification('error', 'Failed to load stories');
+    } finally {
+      setIsLoadingStories(false);
     }
   };
 
@@ -235,9 +253,22 @@ export default function Admin() {
     }
   };
 
-  const handleDecision = (story: Story, status: Story['status']) => {
-    updateStoryStatus(story.id, status);
-    showNotification('success', `Story ${status === 'approved' ? 'published' : 'rejected'}.`);
+  const handleDecision = async (story: Story, status: Story['status']) => {
+    try {
+      // Update in Firestore
+      await updateStoryStatusInDB(story.id, status);
+      
+      // Update local state
+      updateStoryStatus(story.id, status);
+      
+      // Remove from pending list by reloading stories
+      await loadStories();
+      
+      showNotification('success', `✅ Story ${status === 'approved' ? 'approved and published' : 'rejected'}.`);
+    } catch (error) {
+      console.error('Error updating story status:', error);
+      showNotification('error', '❌ Failed to update story status. Please try again.');
+    }
   };
 
   const getNotificationColor = (type: 'success' | 'error' | 'info') => {
@@ -541,10 +572,24 @@ export default function Admin() {
                   <h2 className="text-3xl font-black">✅ Pending Articles</h2>
                   <p className="text-slate-400">Approve stories before they appear on the Stories wall.</p>
                 </div>
-                <span className="text-sm text-slate-400">{pendingStories.length} pending</span>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={loadStories}
+                    disabled={isLoadingStories}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-400 transition-colors disabled:opacity-50"
+                  >
+                    {isLoadingStories ? '🔄 Loading...' : '🔄 Refresh'}
+                  </button>
+                  <span className="text-sm text-slate-400">{pendingStories.length} pending</span>
+                </div>
               </div>
               <div className="space-y-4">
-                {pendingStories.length === 0 ? (
+                {isLoadingStories ? (
+                  <div className="text-center py-20">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+                    <p className="mt-4 text-slate-400">Loading stories...</p>
+                  </div>
+                ) : pendingStories.length === 0 ? (
                   <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 text-sm text-slate-400">
                     ✨ No pending articles. New contributions will appear here once submitted.
                   </div>
@@ -562,9 +607,11 @@ export default function Admin() {
                           {new Date(story.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-300 leading-relaxed line-clamp-3">
-                        {story.storyText}
-                      </p>
+                      <div className="max-h-96 overflow-y-auto">
+                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {story.storyText}
+                        </p>
+                      </div>
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleDecision(story, 'approved')}

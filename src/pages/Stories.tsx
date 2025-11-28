@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { v4 as uuidv4 } from 'uuid';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 import { useStoryStore } from '../store/useStoryStore';
 import { Story, StoryTheme, StoryReactions } from '../types';
+import { getStories, addStory as saveStory } from '../services/firebaseService';
 
 // Initial sample stories
 const initialStories: Story[] = [
@@ -63,17 +63,37 @@ const themeColors: Record<StoryTheme, { bg: string; border: string; badge: strin
 
 export default function Stories() {
   const { t } = useTranslation();
-  const { stories, addStory, addReaction, setStories } = useStoryStore();
+  const { stories, addReaction, setStories } = useStoryStore();
   const [activeFilter, setActiveFilter] = useState<StoryTheme | 'all'>('all');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize stories
+  // Load approved stories from Firestore
   useEffect(() => {
-    if (stories.length === 0) {
-      setStories(initialStories);
-    }
-  }, [setStories, stories.length]);
+    const loadApprovedStories = async () => {
+      try {
+        setIsLoading(true);
+        const approvedStories = await getStories('approved');
+        console.log('Loaded approved stories from Firestore:', approvedStories.length, approvedStories);
+        // Merge with initial stories, giving priority to Firestore stories
+        const allStories: Story[] = [...initialStories, ...approvedStories];
+        // Remove duplicates by ID, preferring Firestore versions
+        const uniqueStories: Story[] = Array.from(
+          new Map(allStories.map(story => [story.id, story])).values()
+        );
+        console.log('Total unique stories after merge:', uniqueStories.length);
+        setStories(uniqueStories);
+      } catch (error) {
+        console.error('Error loading stories:', error);
+        // Fallback to initial stories if load fails
+        setStories(initialStories);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadApprovedStories();
+  }, [setStories]);
 
   const approvedStories = stories.filter(story => story.status === 'approved');
   const filteredStories = activeFilter === 'all'
@@ -171,18 +191,25 @@ export default function Stories() {
 
       {/* Stories Grid */}
       <section className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence mode="popLayout">
-            {filteredStories.map((story) => (
-              <StoryCard 
-                key={story.id} 
-                story={story} 
-                onClick={() => setSelectedStory(story)}
-                onReact={(type) => addReaction(story.id, type)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+        {isLoading ? (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+            <p className="mt-4 text-slate-600">Loading stories...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence mode="popLayout">
+              {filteredStories.map((story) => (
+                <StoryCard 
+                  key={story.id} 
+                  story={story} 
+                  onClick={() => setSelectedStory(story)}
+                  onReact={(type) => addReaction(story.id, type)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
         
         {filteredStories.length === 0 && (
           <div className="text-center py-20">
@@ -198,17 +225,37 @@ export default function Stories() {
         {isShareModalOpen && (
           <ShareStoryModal 
             onClose={() => setIsShareModalOpen(false)} 
-            onSubmit={(data) => {
-              addStory({
-                ...data,
-                id: uuidv4(),
-                  status: 'pending',
-                createdAt: new Date(),
-                reactions: { stayStrong: 0, weStandWithYou: 0, youInspireMe: 0 },
-                tags: [],
-                language: 'en' // Default for now
-              });
-              setIsShareModalOpen(false);
+            onSubmit={async (data) => {
+              try {
+                // Save to Firestore
+                await saveStory({
+                  nickname: data.nickname,
+                  ageRange: data.ageRange,
+                  state: data.state,
+                  storyText: data.storyText,
+                  theme: data.theme,
+                  triggerWarning: data.triggerWarning,
+                  language: 'en',
+                  tags: [],
+                });
+                
+                // Show success message
+                alert('✅ Your story has been submitted for review. Thank you for sharing!');
+                setIsShareModalOpen(false);
+                
+                // Reload stories after a short delay
+                setTimeout(async () => {
+                  const approvedStories = await getStories('approved');
+                  const allStories: Story[] = [...initialStories, ...approvedStories];
+                  const uniqueStories: Story[] = Array.from(
+                    new Map(allStories.map(story => [story.id, story])).values()
+                  );
+                  setStories(uniqueStories);
+                }, 1000);
+              } catch (error) {
+                console.error('Error submitting story:', error);
+                alert('❌ Failed to submit story. Please try again.');
+              }
             }} 
           />
         )}
