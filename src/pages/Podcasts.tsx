@@ -20,9 +20,15 @@ export default function Podcasts() {
   const [isLoading, setIsLoading] = useState(true);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0));
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const podcasts = useContentStore((state) => state.podcasts);
   const setPodcasts = useContentStore((state) => state.setPodcasts);
+  
+  const latestPodcast = podcasts.length > 0 ? podcasts[0] : null;
 
   useEffect(() => {
     const fetchPodcasts = async () => {
@@ -60,6 +66,27 @@ export default function Podcasts() {
       
       // Create and play new audio
       const audio = new Audio(audioUrl);
+      audio.crossOrigin = 'anonymous';
+      
+      // Set up Web Audio API for visualization
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 64;
+      const source = ctx.createMediaElementSource(audio);
+      source.connect(analyserNode);
+      analyserNode.connect(ctx.destination);
+      
+      setAnalyser(analyserNode);
+      
+      // Update time
+      audio.ontimeupdate = () => {
+        setCurrentTime(audio.currentTime);
+      };
+      
+      audio.onloadedmetadata = () => {
+        setDuration(audio.duration);
+      };
+      
       audio.play();
       setAudioPlayer(audio);
       setPlayingEpisode(episodeId);
@@ -68,8 +95,32 @@ export default function Podcasts() {
       audio.onended = () => {
         setPlayingEpisode(null);
         setAudioPlayer(null);
+        setAnalyser(null);
       };
     }
+  };
+
+  // Animate audio visualization
+  useEffect(() => {
+    if (!analyser) return;
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const animate = () => {
+      analyser.getByteFrequencyData(dataArray);
+      setAudioData(new Uint8Array(dataArray));
+      requestAnimationFrame(animate);
+    };
+    
+    animate();
+  }, [analyser]);
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -116,8 +167,13 @@ export default function Podcasts() {
                 Real conversations about HIV, health, stigma, and hope. Join us as we break barriers one episode at a time.
               </p>
               <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                <button className="bg-primary-600 text-white px-8 py-4 rounded-full font-bold hover:bg-primary-500 transition-all shadow-lg shadow-primary-600/30 flex items-center gap-2">
-                  <span>▶</span> Listen to Latest
+                <button 
+                  onClick={() => latestPodcast && handlePlayPause(latestPodcast.id, latestPodcast.audioUrl)}
+                  disabled={!latestPodcast}
+                  className="bg-primary-600 text-white px-8 py-4 rounded-full font-bold hover:bg-primary-500 transition-all shadow-lg shadow-primary-600/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span>{playingEpisode === latestPodcast?.id ? '⏸' : '▶'}</span> 
+                  {playingEpisode === latestPodcast?.id ? 'Pause' : 'Listen to Latest'}
                 </button>
                 <button className="bg-white/10 text-white border border-white/20 px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-all">
                   Subscribe
@@ -136,37 +192,56 @@ export default function Podcasts() {
               <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700 shadow-2xl max-w-md mx-auto">
                 <div className="aspect-square bg-slate-800 rounded-2xl mb-6 flex items-center justify-center text-8xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-30">
-                    {[...Array(7)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="w-2 bg-primary-400 rounded-full"
-                        animate={{
-                          height: ['30%', '90%', '50%', '100%', '40%'],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          delay: i * 0.15,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="relative z-10">🎙️</span>
+                  {playingEpisode === latestPodcast?.id && audioData.length > 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2">
+                      {Array.from(audioData).slice(0, 7).map((value, i) => (
+                        <div
+                          key={i}
+                          className="w-2 bg-primary-400 rounded-full transition-all duration-75"
+                          style={{ height: `${Math.max(20, (value / 255) * 100)}%` }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-30">
+                      {[...Array(7)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 bg-primary-400 rounded-full"
+                          animate={{
+                            height: ['30%', '90%', '50%', '100%', '40%'],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            delay: i * 0.15,
+                            ease: 'easeInOut',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <span className="relative z-10">{latestPodcast ? categoryIcons[latestPodcast.category] : '🎙️'}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="h-2 bg-slate-700 rounded-full w-full overflow-hidden">
-                    <div className="h-full bg-primary-500 w-1/3" />
+                    <div 
+                      className="h-full bg-primary-500 transition-all duration-200" 
+                      style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                    />
                   </div>
                   <div className="flex justify-between text-xs text-slate-400 font-mono">
-                    <span>12:45</span>
-                    <span>45:20</span>
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{latestPodcast?.duration || formatTime(duration)}</span>
                   </div>
                 </div>
                 <div className="mt-6">
-                  <h3 className="text-xl font-bold text-white mb-1">Living Positively</h3>
-                  <p className="text-slate-400 text-sm">Ep. 1 • Dr. Sarah & Rahul K.</p>
+                  <h3 className="text-xl font-bold text-white mb-1">
+                    {latestPodcast?.title || 'No Podcasts Available'}
+                  </h3>
+                  <p className="text-slate-400 text-sm">
+                    {latestPodcast ? `${latestPodcast.host} & ${latestPodcast.guest}` : 'Upload a podcast to get started'}
+                  </p>
                 </div>
               </div>
             </motion.div>
