@@ -448,15 +448,49 @@ function GamePlay() {
                   animate={{ height: 'auto', opacity: 1 }}
                   className="bg-slate-50 p-8 border-t border-slate-100"
                 >
+                  {/* Correct/Wrong Message */}
+                  <div className={`mb-6 p-4 rounded-xl ${
+                    selectedOption === questions[currentQuestion].correct
+                      ? 'bg-green-100 border border-green-300'
+                      : 'bg-red-100 border border-red-300'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">
+                        {selectedOption === questions[currentQuestion].correct ? '✅' : '❌'}
+                      </span>
+                      <div>
+                        <h3 className={`font-bold text-lg ${
+                          selectedOption === questions[currentQuestion].correct
+                            ? 'text-green-800'
+                            : 'text-red-800'
+                        }`}>
+                          {selectedOption === questions[currentQuestion].correct ? 'Correct!' : 'Incorrect'}
+                        </h3>
+                        <p className={`text-sm ${
+                          selectedOption === questions[currentQuestion].correct
+                            ? 'text-green-700'
+                            : 'text-red-700'
+                        }`}>
+                          {selectedOption === questions[currentQuestion].correct
+                            ? 'Great job! You got it right.'
+                            : `The correct answer is: "${questions[currentQuestion].options[questions[currentQuestion].correct]}"`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Explanation */}
                   <div className="flex gap-4 mb-6">
                     <div className="text-2xl">💡</div>
                     <div>
-                      <h4 className="font-bold text-slate-900 mb-1">Did you know?</h4>
+                      <h4 className="font-bold text-slate-900 mb-2">Why?</h4>
                       <p className="text-slate-600 leading-relaxed">
                         {questions[currentQuestion].explanation}
                       </p>
                     </div>
                   </div>
+                  
                   <button
                     onClick={nextQuestion}
                     className="w-full bg-primary-600 text-white font-bold py-4 rounded-xl hover:bg-primary-700 transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
