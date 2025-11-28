@@ -66,17 +66,21 @@ export default function Podcasts() {
       
       // Create and play new audio
       const audio = new Audio(audioUrl);
-      audio.crossOrigin = 'anonymous';
       
       // Set up Web Audio API for visualization
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 64;
-      const source = ctx.createMediaElementSource(audio);
-      source.connect(analyserNode);
-      analyserNode.connect(ctx.destination);
-      
-      setAnalyser(analyserNode);
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyserNode = ctx.createAnalyser();
+        analyserNode.fftSize = 64;
+        const source = ctx.createMediaElementSource(audio);
+        source.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
+        
+        setAnalyser(analyserNode);
+      } catch (error) {
+        console.error('Audio context error:', error);
+        // Continue playing audio even if visualization fails
+      }
       
       // Update time
       audio.ontimeupdate = () => {
@@ -87,7 +91,7 @@ export default function Podcasts() {
         setDuration(audio.duration);
       };
       
-      audio.play();
+      audio.play().catch(err => console.error('Play error:', err));
       setAudioPlayer(audio);
       setPlayingEpisode(episodeId);
 
