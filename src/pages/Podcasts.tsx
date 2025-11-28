@@ -20,8 +20,6 @@ export default function Podcasts() {
   const [isLoading, setIsLoading] = useState(true);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0));
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -64,26 +62,9 @@ export default function Podcasts() {
         audioPlayer.currentTime = 0;
       }
       
-      // Create and play new audio
+      // Create and play new audio - simple HTML5 audio
       const audio = new Audio(audioUrl);
-      audio.volume = 1.0; // Set volume to max
-      
-      // Set up Web Audio API for visualization BEFORE playing
-      let analyserNode: AnalyserNode | null = null;
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        analyserNode = ctx.createAnalyser();
-        analyserNode.fftSize = 64;
-        const source = ctx.createMediaElementSource(audio);
-        source.connect(analyserNode);
-        analyserNode.connect(ctx.destination);
-        
-        setAnalyser(analyserNode);
-        console.log('Audio context setup successful');
-      } catch (error) {
-        console.error('Audio context error:', error);
-        // Audio will still play through normal output
-      }
+      audio.volume = 1.0;
       
       // Update time
       audio.ontimeupdate = () => {
@@ -115,26 +96,10 @@ export default function Podcasts() {
       audio.onended = () => {
         setPlayingEpisode(null);
         setAudioPlayer(null);
-        setAnalyser(null);
+        setCurrentTime(0);
       };
     }
   };
-
-  // Animate audio visualization
-  useEffect(() => {
-    if (!analyser) return;
-    
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    const animate = () => {
-      analyser.getByteFrequencyData(dataArray);
-      setAudioData(new Uint8Array(dataArray));
-      requestAnimationFrame(animate);
-    };
-    
-    animate();
-  }, [analyser]);
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds)) return '0:00';
@@ -212,13 +177,21 @@ export default function Podcasts() {
               <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700 shadow-2xl max-w-md mx-auto">
                 <div className="aspect-square bg-slate-800 rounded-2xl mb-6 flex items-center justify-center text-8xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 group-hover:scale-110 transition-transform duration-700" />
-                  {playingEpisode === latestPodcast?.id && audioData.length > 0 ? (
+                  {playingEpisode === latestPodcast?.id ? (
                     <div className="absolute inset-0 flex items-center justify-center gap-2">
-                      {Array.from(audioData).slice(0, 7).map((value, i) => (
-                        <div
+                      {[...Array(7)].map((_, i) => (
+                        <motion.div
                           key={i}
-                          className="w-2 bg-primary-400 rounded-full transition-all duration-75"
-                          style={{ height: `${Math.max(20, (value / 255) * 100)}%` }}
+                          className="w-2 bg-primary-400 rounded-full"
+                          animate={{
+                            height: ['30%', '90%', '50%', '100%', '40%'],
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            delay: i * 0.1,
+                            ease: 'easeInOut',
+                          }}
                         />
                       ))}
                     </div>
