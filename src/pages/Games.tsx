@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 
@@ -12,6 +12,7 @@ interface GameCard {
   difficulty: 'Easy' | 'Medium' | 'Hard';
   playCount: number;
   color: string;
+  requiredScore?: number;
 }
 
 interface Question {
@@ -31,15 +32,17 @@ const games: GameCard[] = [
     difficulty: 'Easy',
     playCount: 1250,
     color: 'from-primary-500 to-primary-600',
+    requiredScore: 0,
   },
   {
     id: 'prevention-steps',
     title: 'Prevention Steps',
-    description: 'Learn safe practices',
+    description: 'Real-life situations',
     emoji: '🎯',
     difficulty: 'Medium',
     playCount: 890,
     color: 'from-gold-500 to-gold-600',
+    requiredScore: 2,
   },
   {
     id: 'safe-choices',
@@ -49,15 +52,17 @@ const games: GameCard[] = [
     difficulty: 'Medium',
     playCount: 756,
     color: 'from-slate-500 to-slate-600',
+    requiredScore: 4,
   },
   {
     id: 'knowledge-quest',
     title: 'Knowledge Quest',
-    description: 'Complete all challenges',
+    description: 'Advanced clinical knowledge',
     emoji: '🏆',
     difficulty: 'Hard',
     playCount: 542,
     color: 'from-ribbon-500 to-ribbon-600',
+    requiredScore: 4,
   },
 ];
 
@@ -88,24 +93,45 @@ const gameQuestions: Record<string, Question[]> = {
   'prevention-steps': [
     {
       id: 1,
-      question: 'What is the most effective prevention method for sexual transmission?',
-      options: ['Condoms', 'Testing', 'Communication', 'All of the above'],
-      correct: 3,
-      explanation: 'All methods together provide the strongest protection: condoms, regular testing, open communication.',
+      question: 'Your friend confides in you that they had unprotected sex last night and are worried about HIV. What should you advise them to do first?',
+      options: ['Wait and see if symptoms appear', 'Get PEP (Post-Exposure Prophylaxis) within 72 hours', 'Take an HIV test immediately', 'Use extra protection next time'],
+      correct: 1,
+      explanation: 'PEP (Post-Exposure Prophylaxis) must be started within 72 hours of possible exposure. It\'s a 28-day course that can prevent HIV infection. Getting tested immediately won\'t show recent exposure.',
     },
     {
       id: 2,
-      question: 'What does PrEP stand for?',
-      options: ['Pre-exposure Prophylaxis', 'Preventive Reduction Program', 'Post-exposure Prevention', 'Pre-approval Plan'],
-      correct: 0,
-      explanation: 'PrEP is a medication taken before potential exposure to HIV to prevent infection.',
+      question: 'You\'re in a new relationship. Your partner says they tested negative 6 months ago, so protection isn\'t needed. What\'s the best response?',
+      options: ['Trust them and skip protection', 'Suggest you both get tested now and use protection until results', 'End the relationship immediately', 'Only use protection sometimes'],
+      correct: 1,
+      explanation: 'A test from 6 months ago doesn\'t reflect current status. Both partners should get tested together and use protection (condoms, PrEP) to stay safe. Open communication builds trust.',
     },
     {
       id: 3,
-      question: 'How often should someone at risk get tested for HIV?',
-      options: ['Once a year', 'Every 6 months', 'Every 3 months', 'Depends on risk level'],
-      correct: 3,
-      explanation: 'Testing frequency depends on individual risk factors. Consult healthcare providers for personalized recommendations.',
+      question: 'You notice a needle on the ground at a park. A child is playing nearby. What should you do?',
+      options: ['Pick it up with bare hands', 'Ignore it - not your problem', 'Use a stick or gloves to safely dispose in a sharps container', 'Kick it away from the child'],
+      correct: 2,
+      explanation: 'Never touch needles with bare hands. Use protective barriers (gloves, stick, thick paper) to pick it up and dispose in a proper sharps container or call local health services. This prevents HIV and other bloodborne disease transmission.',
+    },
+    {
+      id: 4,
+      question: 'Your sibling just disclosed they are HIV positive and on treatment with undetectable viral load. They ask if it\'s safe to share kitchen utensils. What do you say?',
+      options: ['No, keep separate utensils to be safe', 'Yes, completely safe - HIV doesn\'t spread through saliva or casual contact', 'Only if you wash them with hot water immediately', 'Maybe, but use disposable plates'],
+      correct: 1,
+      explanation: 'HIV cannot be transmitted through saliva, sharing utensils, or casual contact. Plus, undetectable = untransmittable (U=U). Your sibling deserves love and normal family interactions without stigma.',
+    },
+    {
+      id: 5,
+      question: 'You\'re planning to get a tattoo. How can you reduce HIV risk?',
+      options: ['Go to the cheapest place available', 'Ensure the artist uses new, sterile needles and equipment for each client', 'Bring your own needle', 'Get it done at a friend\'s home'],
+      correct: 1,
+      explanation: 'Always choose licensed, reputable tattoo parlors that follow strict sterilization protocols. Watch them open new needles. Contaminated equipment can transmit HIV and hepatitis.',
+    },
+    {
+      id: 6,
+      question: 'A healthcare worker accidentally pricks themselves with a needle used on an HIV-positive patient. What\'s the correct protocol?',
+      options: ['Squeeze the wound and wash with soap immediately, then report for PEP within hours', 'Wait to see if they develop symptoms', 'Apply alcohol and continue working', 'Only report if the patient had high viral load'],
+      correct: 0,
+      explanation: 'Immediate action is critical: wash the wound, report the incident immediately, and start PEP as soon as possible (ideally within 2 hours, maximum 72 hours). Needle-stick injuries require urgent medical attention.',
     },
   ],
   'safe-choices': [
@@ -127,24 +153,59 @@ const gameQuestions: Record<string, Question[]> = {
   'knowledge-quest': [
     {
       id: 1,
-      question: 'How long can HIV survive outside the body?',
-      options: ['Minutes', 'Hours', 'Seconds', 'Days'],
+      question: 'A patient presents with CD4 count of 180 cells/μL. What stage of HIV infection is this?',
+      options: ['Stage 1 (Acute)', 'Stage 2 (Chronic)', 'Stage 3 (AIDS)', 'Normal range'],
       correct: 2,
-      explanation: 'HIV is a fragile virus and dies within seconds outside the body.',
+      explanation: 'CD4 count below 200 cells/μL indicates Stage 3 (AIDS). Normal CD4 count is 500-1500 cells/μL. Immediate ART initiation is critical.',
     },
     {
       id: 2,
-      question: 'What is the CD4 count important for in HIV?',
-      options: ['Blood pressure', 'Immune strength', 'Sugar levels', 'Heart rate'],
+      question: 'What is the "window period" in HIV testing and why is it clinically significant?',
+      options: ['Time between exposure and symptoms', 'Time between exposure and detectable antibodies (10-90 days)', 'Time to start treatment', 'Recovery period'],
       correct: 1,
-      explanation: 'CD4 count measures the strength of your immune system when living with HIV.',
+      explanation: 'The window period is 10-90 days when HIV is present but antibodies aren\'t detectable yet. During this time, a person can test negative but still transmit HIV. 4th generation tests detect earlier.',
     },
     {
       id: 3,
-      question: 'What does ART stand for?',
-      options: ['Antiretroviral Therapy', 'Anti-reverse Treatment', 'Antiviral Response Team', 'Advanced Rapid Test'],
+      question: 'A patient on ART shows viral load <50 copies/mL for 6+ months. What does this mean?',
+      options: ['HIV is cured', 'Undetectable = Untransmittable (U=U)', 'Treatment failed', 'Needs stronger medication'],
+      correct: 1,
+      explanation: 'U=U is scientifically proven: people with undetectable viral loads cannot sexually transmit HIV. This revolutionized HIV prevention and reduced stigma.',
+    },
+    {
+      id: 4,
+      question: 'Which opportunistic infection is the leading cause of death in AIDS patients with CD4 <100?',
+      options: ['Common cold', 'Tuberculosis (TB)', 'Seasonal flu', 'Food poisoning'],
+      correct: 1,
+      explanation: 'Tuberculosis is the #1 killer of people with HIV/AIDS globally. TB and HIV co-infection requires specialized treatment. Prevention through TB screening is crucial.',
+    },
+    {
+      id: 5,
+      question: 'What is the mechanism of action of NRTIs (Nucleoside Reverse Transcriptase Inhibitors)?',
+      options: ['Block virus entry into cells', 'Prevent viral DNA integration', 'Inhibit reverse transcriptase enzyme', 'Boost immune system'],
+      correct: 2,
+      explanation: 'NRTIs (like AZT, 3TC) block reverse transcriptase, preventing HIV from converting its RNA into DNA. This stops viral replication. They\'re backbone drugs in ART regimens.',
+    },
+    {
+      id: 6,
+      question: 'A pregnant woman tests HIV positive. What intervention prevents mother-to-child transmission?',
+      options: ['C-section delivery only', 'ART during pregnancy + safe delivery practices + infant prophylaxis', 'Avoid breastfeeding only', 'Wait until after delivery'],
+      correct: 1,
+      explanation: 'PMTCT (Prevention of Mother-to-Child Transmission) involves: maternal ART, safe delivery, infant prophylaxis. This reduces transmission from 25% to <1%. Breastfeeding is safe with undetectable viral load.',
+    },
+    {
+      id: 7,
+      question: 'What does drug resistance mean in HIV treatment, and how does it develop?',
+      options: ['Virus mutates when medication is taken inconsistently', 'Patient becomes allergic', 'Medication becomes toxic', 'Virus dies'],
       correct: 0,
-      explanation: 'Antiretroviral Therapy is the medical treatment for HIV that helps control the virus.',
+      explanation: 'HIV mutates rapidly. Missing doses allows resistant strains to multiply. Adherence >95% is critical. Resistance testing guides treatment changes. Prevention: take meds daily, same time.',
+    },
+    {
+      id: 8,
+      question: 'What is the significance of viral load blips in patients on stable ART?',
+      options: ['Treatment failure - change meds immediately', 'Normal fluctuations, monitor if <200 copies/mL', 'Patient is non-adherent', 'HIV is mutating'],
+      correct: 1,
+      explanation: 'Blips (temporary increases <200 copies/mL) are common due to infections, vaccinations, or test variability. Single blip doesn\'t mean failure. Sustained increase >200 needs investigation.',
     },
   ],
 };
@@ -153,6 +214,32 @@ const difficultyColors: Record<string, string> = {
   Easy: 'bg-green-100 text-green-700',
   Medium: 'bg-gold-100 text-gold-700',
   Hard: 'bg-primary-100 text-primary-700',
+};
+
+// Helper functions for game progress
+const getGameProgress = (gameId: string): number => {
+  const stored = localStorage.getItem(`game_${gameId}_score`);
+  return stored ? parseInt(stored) : 0;
+};
+
+const saveGameProgress = (gameId: string, score: number) => {
+  localStorage.setItem(`game_${gameId}_score`, score.toString());
+};
+
+const isGameUnlocked = (gameIndex: number): boolean => {
+  if (gameIndex === 0) return true;
+  const prevGame = games[gameIndex - 1];
+  const prevScore = getGameProgress(prevGame.id);
+  return prevScore >= (prevGame.requiredScore || 0);
+};
+
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 };
 
 function GameGrid() {
@@ -215,37 +302,60 @@ function GameGrid() {
       {/* Games Grid */}
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {games.map((game, index) => (
-            <motion.div
-              key={game.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ translateY: -8 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate(`/games/${game.id}`)}
-              className="relative group cursor-pointer"
-            >
-              {/* Glowing Background */}
+          {games.map((game, index) => {
+            const isUnlocked = isGameUnlocked(index);
+            const score = getGameProgress(game.id);
+            const totalQuestions = gameQuestions[game.id]?.length || 0;
+            const isCompleted = score > 0;
+
+            return (
               <motion.div
-                className={`absolute inset-0 bg-gradient-to-br ${game.color} rounded-2xl opacity-0 blur-xl group-hover:opacity-40 transition-all duration-300 -z-10`}
-              />
+                key={game.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={isUnlocked ? { translateY: -8 } : {}}
+                whileTap={isUnlocked ? { scale: 0.98 } : {}}
+                onClick={() => isUnlocked && navigate(`/games/${game.id}`)}
+                className={`relative group ${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+              >
+                {/* Lock Overlay */}
+                {!isUnlocked && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm rounded-2xl">
+                    <div className="text-center">
+                      <div className="text-5xl mb-2">🔒</div>
+                      <p className="text-white font-bold text-sm">Complete previous game</p>
+                    </div>
+                  </div>
+                )}
 
-              {/* Card */}
-              <div className="relative bg-white border border-slate-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col overflow-hidden">
-                {/* Shine Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                {/* Completed Badge */}
+                {isCompleted && (
+                  <div className="absolute top-4 right-4 z-20 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                    ✓ {score}/{totalQuestions}
+                  </div>
+                )}
 
-                {/* Content */}
-                <div className="relative z-10 flex-1 flex flex-col items-center text-center">
-                  {/* Animated Icon */}
-                  <motion.div
-                    className="text-6xl mb-6 p-4 bg-slate-50 rounded-full"
-                    whileHover={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    {game.emoji}
-                  </motion.div>
+                {/* Glowing Background */}
+                <motion.div
+                  className={`absolute inset-0 bg-gradient-to-br ${game.color} rounded-2xl opacity-0 blur-xl group-hover:opacity-40 transition-all duration-300 -z-10`}
+                />
+
+                {/* Card */}
+                <div className="relative bg-white border border-slate-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col overflow-hidden">
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer" />
+
+                  {/* Content */}
+                  <div className="relative z-10 flex-1 flex flex-col items-center text-center">
+                    {/* Animated Icon */}
+                    <motion.div
+                      className="text-6xl mb-6 p-4 bg-slate-50 rounded-full"
+                      whileHover={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      {game.emoji}
+                    </motion.div>
 
                   {/* Difficulty Badge */}
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 ${difficultyColors[game.difficulty]}`}>
@@ -273,7 +383,8 @@ function GameGrid() {
                 </div>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -288,9 +399,17 @@ function GamePlay() {
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
 
-  const questions = gameQuestions[gameId || ''] || [];
   const game = games.find((g) => g.id === gameId);
+
+  // Shuffle questions on component mount
+  useEffect(() => {
+    const originalQuestions = gameQuestions[gameId || ''] || [];
+    setShuffledQuestions(shuffleArray(originalQuestions));
+  }, [gameId]);
+
+  const questions = shuffledQuestions;
 
   if (!game || questions.length === 0) {
     return (
@@ -329,6 +448,34 @@ function GamePlay() {
   };
 
   if (showResult) {
+    // Save progress
+    if (gameId && score > getGameProgress(gameId)) {
+      saveGameProgress(gameId, score);
+    }
+
+    const percentage = (score / questions.length) * 100;
+    let resultEmoji = '🏆';
+    let resultTitle = '';
+    let resultMessage = '';
+    
+    if (percentage === 100) {
+      resultEmoji = '🌟';
+      resultTitle = 'Perfect Score!';
+      resultMessage = 'You\'re a true HIV awareness champion! Your knowledge can save lives. Keep spreading the facts and fighting stigma!';
+    } else if (percentage >= 80) {
+      resultEmoji = '💪';
+      resultTitle = 'Excellent Work!';
+      resultMessage = 'You\'re a fighter! Great job on understanding HIV prevention. Review the missed questions to become even stronger!';
+    } else if (percentage >= 60) {
+      resultEmoji = '👍';
+      resultTitle = 'Good Effort!';
+      resultMessage = 'You\'re on the right track! Keep learning and you\'ll master these prevention strategies. Every question you answer helps you protect yourself and others.';
+    } else {
+      resultEmoji = '📚';
+      resultTitle = 'Keep Learning!';
+      resultMessage = 'Don\'t give up! Knowledge is power. Retake this quiz and review the explanations carefully. You\'ve got this - every expert was once a beginner!';
+    }
+
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans text-slate-850">
         <motion.div
@@ -336,11 +483,18 @@ function GamePlay() {
           animate={{ scale: 1, opacity: 1 }}
           className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center border border-slate-100"
         >
-          <div className="text-6xl mb-6">🏆</div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Game Complete!</h2>
-          <p className="text-slate-600 mb-8 text-lg">
+          <div className="text-6xl mb-6">{resultEmoji}</div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">{resultTitle}</h2>
+          <p className="text-slate-600 mb-6 text-lg">
             You scored <span className="text-primary-600 font-bold text-2xl">{score}</span> out of <span className="font-bold text-2xl">{questions.length}</span>
           </p>
+          
+          {/* Personalized Message */}
+          <div className="bg-primary-50 border border-primary-200 rounded-2xl p-6 mb-8">
+            <p className="text-slate-700 leading-relaxed">
+              {resultMessage}
+            </p>
+          </div>
           
           <div className="space-y-4">
             <button
@@ -350,6 +504,9 @@ function GamePlay() {
                 setScore(0);
                 setSelectedOption(null);
                 setIsAnswered(false);
+                // Reshuffle questions for replay
+                const originalQuestions = gameQuestions[gameId || ''] || [];
+                setShuffledQuestions(shuffleArray(originalQuestions));
               }}
               className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 transition-colors shadow-md hover:shadow-lg"
             >
