@@ -31,9 +31,6 @@ export default function Podcasts() {
         const firebasePodcasts = await getPodcasts();
         console.log('Fetched podcasts:', firebasePodcasts.length);
         setPodcasts(firebasePodcasts);
-        if (firebasePodcasts.length === 0) {
-          setError('No podcasts found. Please check Firestore rules.');
-        }
       } catch (error: any) {
         console.error('Error fetching podcasts:', error);
         setError(`Failed to load podcasts: ${error.message || 'Unknown error'}`);

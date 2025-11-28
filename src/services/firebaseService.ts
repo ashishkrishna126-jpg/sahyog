@@ -58,9 +58,13 @@ export const addPodcast = async (podcastData: PodcastData) => {
 // Get all podcasts
 export const getPodcasts = async () => {
   try {
+    console.log('Fetching podcasts from Firestore...');
     const q = query(collection(db, 'podcasts'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => {
+    console.log('Raw query snapshot size:', querySnapshot.size);
+    console.log('Documents:', querySnapshot.docs.map(d => ({ id: d.id, data: d.data() })));
+    
+    const podcasts = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -75,6 +79,9 @@ export const getPodcasts = async () => {
         createdAt: data.createdAt?.toDate() || new Date(),
       };
     });
+    
+    console.log('Mapped podcasts:', podcasts.length);
+    return podcasts;
   } catch (error) {
     console.error('Error getting podcasts:', error);
     throw error;
