@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 import { useContentStore } from '../store/useContentStore';
@@ -13,7 +14,8 @@ import {
   getAudioMetadata,
   getStories,
   updateStoryStatus as updateStoryStatusInDB,
-  deleteStory
+  deleteStory,
+  updatePodcast
 } from '../services/firebaseService';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -49,24 +51,40 @@ export default function Admin() {
   const [audioMetadata, setAudioMetadata] = useState<{ duration: string; size: number } | null>(null);
   const [activeTab, setActiveTab] = useState<'publish' | 'manage' | 'moderate' | 'published'>('publish');
   const [isLoadingStories, setIsLoadingStories] = useState(false);
+  const [editingPodcast, setEditingPodcast] = useState<PodcastEpisode | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
 
   useEffect(() => {
     // Auto sign-in with the admin email
     const adminEmail = 'ashishkrishna126@gmail.com';
-    const adminPassword = prompt('Enter admin password to enable uploads:');
+    const adminPassword = prompt('Enter admin password to access Admin Panel:');
     
-    if (adminPassword) {
-      signInWithEmailAndPassword(auth, adminEmail, adminPassword)
-        .then(() => {
-          showNotification('success', 'Authenticated successfully!');
-          loadPodcasts();
-          loadStories();
-        })
-        .catch((error) => {
-          console.error('Auth error:', error);
-          showNotification('error', 'Authentication failed. Uploads will not work.');
-        });
+    if (!adminPassword) {
+      // User cancelled or entered empty password
+      setIsAuthenticating(false);
+      setIsAuthenticated(false);
+      showNotification('error', '❌ Authentication required. Redirecting...');
+      setTimeout(() => window.location.href = '/', 2000);
+      return;
     }
+
+    signInWithEmailAndPassword(auth, adminEmail, adminPassword)
+      .then(() => {
+        setIsAuthenticated(true);
+        setIsAuthenticating(false);
+        showNotification('success', '✅ Authenticated successfully!');
+        loadPodcasts();
+        loadStories();
+      })
+      .catch((error) => {
+        console.error('Auth error:', error);
+        setIsAuthenticated(false);
+        setIsAuthenticating(false);
+        showNotification('error', '❌ Authentication failed. Wrong password. Redirecting...');
+        setTimeout(() => window.location.href = '/', 3000);
+      });
   }, []);
 
   const loadPodcasts = async () => {
@@ -292,6 +310,52 @@ export default function Admin() {
     }
   };
 
+  const handleEditPodcast = (podcast: PodcastEpisode) => {
+    setEditingPodcast(podcast);
+    // Pre-fill the form with existing data
+    setValue('title', podcast.title);
+    setValue('host', podcast.host);
+    setValue('guest', podcast.guest);
+    setValue('category', podcast.category);
+    setValue('date', podcast.date);
+    setValue('duration', podcast.duration);
+    setValue('description', podcast.description);
+    setActiveTab('manage'); // Stay on manage tab
+  };
+
+  const handleUpdatePodcast = async (data: PodcastFormValues) => {
+    if (!editingPodcast) return;
+
+    setIsUpdating(true);
+    try {
+      await updatePodcast(editingPodcast.id, {
+        title: data.title.trim(),
+        host: data.host.trim(),
+        guest: data.guest.trim(),
+        category: data.category,
+        language: editingPodcast.language, // Keep existing or allow change
+        date: data.date,
+        duration: data.duration || editingPodcast.duration,
+        description: data.description.trim(),
+        audioUrl: editingPodcast.audioUrl,
+        createdAt: editingPodcast.createdAt as any,
+      });
+
+      showNotification('success', '✅ Podcast updated successfully!');
+      setEditingPodcast(null);
+      loadPodcasts();
+    } catch (error) {
+      console.error('Error updating podcast:', error);
+      showNotification('error', '❌ Failed to update podcast. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingPodcast(null);
+  };
+
   const getNotificationColor = (type: 'success' | 'error' | 'info') => {
     switch (type) {
       case 'success': return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
@@ -299,6 +363,36 @@ export default function Admin() {
       case 'info': return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
     }
   };
+
+  // Show loading screen while authenticating
+  if (isAuthenticating) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-50 font-sans flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-600 border-t-transparent mb-4"></div>
+          <p className="text-xl font-bold">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Block access if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-50 font-sans flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-6xl mb-4">🔒</div>
+          <h1 className="text-3xl font-black mb-4">Access Denied</h1>
+          <p className="text-slate-400 mb-6">Authentication failed. You will be redirected to the homepage.</p>
+          {notification && (
+            <div className={`px-6 py-4 rounded-2xl text-sm font-semibold ${getNotificationColor(notification.type)}`}>
+              {notification.message}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-50 font-sans">
@@ -574,6 +668,12 @@ export default function Admin() {
                         </div>
                         <div className="flex flex-col gap-2">
                           <button
+                            onClick={() => handleEditPodcast(podcast)}
+                            className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-400 transition-colors"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
                             onClick={() => window.open(podcast.audioUrl, '_blank')}
                             className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-400 transition-colors"
                           >
@@ -592,6 +692,103 @@ export default function Admin() {
                 </div>
               )}
             </section>
+          )}
+
+          {/* Edit Podcast Modal */}
+          {editingPodcast && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-slate-800 border border-white/10 rounded-3xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                key={editingPodcast.id}
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-3xl font-black text-white">✏️ Edit Podcast</h2>
+                  <button
+                    onClick={cancelEdit}
+                    className="text-slate-400 hover:text-white text-2xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit(handleUpdatePodcast)} className="grid gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Episode Title *</label>
+                    <input
+                      {...register('title', { required: 'Title is required' })}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Host *</label>
+                    <input
+                      {...register('host', { required: 'Host is required' })}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Guest / Panel *</label>
+                    <input
+                      {...register('guest', { required: 'Guest is required' })}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Category</label>
+                    <select
+                      {...register('category')}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 outline-none text-white"
+                    >
+                      {categoryEntries.map(([value, label]) => (
+                        <option key={value} value={value} className="bg-slate-800">
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Recording Date</label>
+                    <input
+                      {...register('date')}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold text-slate-300">Duration</label>
+                    <input
+                      {...register('duration')}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 md:col-span-2">
+                    <label className="text-sm font-semibold text-slate-300">Description *</label>
+                    <textarea
+                      {...register('description', { required: 'Description is required' })}
+                      rows={4}
+                      className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 outline-none resize-none text-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="bg-slate-700 text-white font-bold px-8 py-3 rounded-2xl hover:bg-slate-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isUpdating}
+                      className="bg-emerald-500 text-white font-bold px-8 py-3 rounded-2xl shadow-lg hover:bg-emerald-400 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
+                    >
+                      {isUpdating ? '⏳ Updating...' : '✅ Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
           )}
 
           {/* Moderate Stories Tab */}

@@ -96,9 +96,17 @@ export default function Stories() {
   }, [setStories]);
 
   const approvedStories = stories.filter(story => story.status === 'approved');
+  
+  // Sort by latest created date first (newest first)
+  const sortedApprovedStories = [...approvedStories].sort((a, b) => {
+    const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+    const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+    return dateB.getTime() - dateA.getTime(); // Newest first
+  });
+  
   const filteredStories = activeFilter === 'all'
-    ? approvedStories
-    : approvedStories.filter(story => story.theme === activeFilter);
+    ? sortedApprovedStories
+    : sortedApprovedStories.filter(story => story.theme === activeFilter);
   const pendingCount = stories.filter(story => story.status === 'pending').length;
 
   return (

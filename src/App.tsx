@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import { useTranslation } from 'react-i18next';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getLanguageMetadata } from './services/translationService';
 import LanguageLanding from './pages/LanguageLanding';
 import Homepage from './pages/Homepage';
@@ -17,11 +17,40 @@ import HowHIVSpreads from './pages/InfoPages/HowHIVSpreads';
 import HIVTestingExplained from './pages/InfoPages/HIVTestingExplained';
 import TreatmentWorks from './pages/InfoPages/TreatmentWorks';
 import WhereToGetHelp from './pages/InfoPages/WhereToGetHelp';
+import InauguralLanding from './pages/InauguralLanding';
+import { LAUNCH_DATE } from './config/launch';
 import './locales/i18n';
 
 function App() {
   const { userPreferences } = useAppStore();
   const { i18n } = useTranslation();
+  const [isLaunched, setIsLaunched] = useState(false);
+
+  useEffect(() => {
+    // Check if site is already launched via time
+    const checkLaunchStatus = () => {
+      const now = new Date();
+      const launchDate = new Date(LAUNCH_DATE);
+      
+      // Only check time, do not persist session
+      if (now > launchDate) {
+        setIsLaunched(true);
+      }
+    };
+    
+    checkLaunchStatus();
+    // Check every minute just in case
+    const interval = setInterval(checkLaunchStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleManualLaunch = () => {
+    // Navigate to home page if not already there
+    if (window.location.pathname !== '/home' && window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/home');
+    }
+    setIsLaunched(true);
+  };
 
   // Apply language-specific styling
   useEffect(() => {
@@ -45,6 +74,10 @@ function App() {
     root.style.setProperty('--line-height', metadata.lineHeight);
     root.style.setProperty('--letter-spacing', metadata.letterSpacing);
   }, [i18n.language]);
+
+  if (!isLaunched) {
+    return <InauguralLanding onLaunch={handleManualLaunch} />;
+  }
 
   return (
     <Router>

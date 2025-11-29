@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import RedRibbon from '../components/common/RedRibbon';
 import { useContentStore } from '../store/useContentStore';
 import { getPodcasts } from '../services/firebaseService';
@@ -19,6 +18,7 @@ type PodcastHighlight = {
   detail: string;
   duration: string;
   isComingSoon: boolean;
+  language?: string;
 };
 
 const keralaData = [
@@ -88,6 +88,7 @@ export default function Homepage() {
       detail: podcast.description,
       duration: podcast.duration || 'TBA',
       isComingSoon: false,
+      language: podcast.language,
     }));
     
     // Fill remaining slots with "Coming Soon"
@@ -107,25 +108,54 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen bg-white overflow-hidden font-sans text-slate-850">
+      {/* Top Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-3 sm:py-4 overflow-hidden relative"
+      >
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-30" />
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div 
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1.5"
+              >
+                <span className="text-lg">❤️</span>
+                <span className="text-lg">🏥</span>
+              </motion.div>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-xs font-medium opacity-90 uppercase tracking-wider">A Proud Initiative By</p>
+                <p className="text-sm sm:text-base font-bold tracking-wide">Art Care Plus Center, Thrissur</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+
       <header className="border-b border-primary-100 bg-white/80 backdrop-blur-md sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <motion.div 
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }} 
             transition={{ duration: 0.6 }} 
-            className="flex items-center gap-4 flex-1 min-w-0"
+            className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start"
           >
             <RedRibbon size="sm" className="flex-shrink-0" />
-            <div>
+            <div className="text-center sm:text-left">
               <p className="text-xs uppercase tracking-[0.2em] text-primary-600 font-bold">SAHYOG</p>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-850 leading-tight break-words">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-850 leading-tight">
                 Voices of Hope Podcast
               </h1>
             </div>
           </motion.div>
-          <div className="flex-shrink-0">
-            <LanguageSwitcher />
-          </div>
         </div>
       </header>
 
@@ -290,7 +320,7 @@ export default function Homepage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">📅</span>
+                      <span className="text-2xl">🎙️</span>
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-white/60">Launch Status</p>
                         <p className="font-bold">Pre-Launch · More Coming Soon</p>
@@ -345,7 +375,14 @@ export default function Homepage() {
                           <p className="text-sm uppercase tracking-[0.3em] text-white/50 font-bold">Coming Soon</p>
                         </div>
                       ) : (
-                        <p className="text-sm uppercase tracking-[0.3em] text-white/70">Featured</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm uppercase tracking-[0.3em] text-white/70">Featured</p>
+                          {highlight.language && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold">
+                              {highlight.language === 'en' ? 'English' : highlight.language === 'ml' ? 'Malayalam' : highlight.language === 'hi' ? 'Hindi' : highlight.language === 'ta' ? 'Tamil' : highlight.language === 'kn' ? 'Kannada' : 'Telugu'}
+                            </span>
+                          )}
+                        </div>
                       )}
                       <span className={`text-xs ${
                         highlight.isComingSoon ? 'text-white/40' : 'text-white/60'

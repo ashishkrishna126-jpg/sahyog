@@ -14,6 +14,15 @@ const categoryIcons: Record<PodcastCategory, string> = {
   community: '🌍',
 };
 
+const languageNames: Record<string, string> = {
+  en: 'English',
+  hi: 'Hindi',
+  ml: 'Malayalam',
+  ta: 'Tamil',
+  kn: 'Kannada',
+  te: 'Telugu',
+};
+
 export default function Podcasts() {
   const [activeCategory, setActiveCategory] = useState<'all' | PodcastCategory>('all');
   const [playingEpisode, setPlayingEpisode] = useState<string | null>(null);
@@ -340,8 +349,11 @@ export default function Podcasts() {
                     <span className="px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider">
                       {episode.category}
                     </span>
+                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                      🌐 {languageNames[episode.language] || episode.language}
+                    </span>
                     <span className="text-slate-400 text-xs font-bold flex items-center">
-                      📅 {episode.date}
+                      🗓️ {episode.date}
                     </span>
                   </div>
                   
